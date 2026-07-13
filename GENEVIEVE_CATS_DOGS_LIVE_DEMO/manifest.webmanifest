@@ -1,0 +1,11 @@
+{
+  "name":"GENEVIEVE App Cats & Dogs Care Command",
+  "short_name":"GENEVIEVE Care",
+  "start_url":"./index.html",
+  "display":"standalone",
+  "background_color":"#cbdcc5",
+  "theme_color":"#073b25",
+  "icons":[
+    {"src":"./assets/genevieve-ga-logo.png","sizes":"600x600","type":"image/png","purpose":"any maskable"}
+  ]
+}
