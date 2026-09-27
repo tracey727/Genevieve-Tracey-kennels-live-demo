@@ -4,7 +4,7 @@
 
 - Canonical base is the richer Cats & Dogs live interface.
 - Recovered safety branch was audited and **not** merged wholesale.
-- Known recovered corruption (`<buttton>` and mojibake) is blocked by CI.
+- Known recovered malformed button markup and mojibake are blocked by CI.
 - Safety Command was rebuilt cleanly: daily operations, workforce evidence, physio/mobility observations, stock/expiry assurance and compliance register.
 - Expired stock is RED and creates a manager alert in the demonstration.
 - Existing kennel/cattery bookings, custody, placement, rounds, emergency, incidents, transport and owner views are preserved.
