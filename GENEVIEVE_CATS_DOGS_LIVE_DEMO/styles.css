@@ -67,3 +67,11 @@ button{cursor:pointer}
 @media(max-width:850px){.app-frame{width:100%;margin:0;border-width:0;border-radius:0}.topbar{position:relative;flex-wrap:wrap}.brand-lockup{min-width:0}.app-name{text-align:left;order:3;width:100%;flex-basis:100%}.layout{display:block}.sidebar{position:sticky;top:0;z-index:45;flex-direction:row;overflow:auto;padding:7px}.sidebar-bottom{display:none}.nav-btn{white-space:nowrap;padding:8px}.content{padding:11px}.state-card{grid-template-columns:65px 1fr}.state-icon{width:58px;height:58px;font-size:2rem}.traffic{grid-column:1/-1;justify-content:center}.stats{grid-template-columns:repeat(2,1fr)}.grid.two,.grid.three,.grid.four{grid-template-columns:1fr}.form-grid,.form-grid.three{grid-template-columns:1fr}.quick-actions{grid-template-columns:repeat(2,1fr)}.top-actions .clock{display:none}}
 @media(max-width:480px){.brand-title strong{font-size:.92rem}.brand-title span{font-size:.58rem}.brand-tree{width:46px;height:55px}.brand-ga{width:42px;height:42px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat b{font-size:1.35rem}.state-card h2{font-size:1.15rem}.content{padding:8px}.mobile-grid{grid-template-columns:repeat(4,1fr)}}
 @media print{body{background:#fff}.app-frame{border:0;box-shadow:none}.sidebar,.top-actions,.quick-actions,.button-row,.mobile-actions{display:none}.layout{display:block}.screen{display:block!important;page-break-after:always}.card{box-shadow:none}}
+
+
+/* Canonical Safety Command additions */
+.formStep{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0;background:var(--card)}
+.formStep summary{cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.formStep .checkline{display:flex;margin:9px 0}
+#safety-command .row .btn{margin-left:6px}
+@media(max-width:760px){#safety-command .row{align-items:flex-start;flex-wrap:wrap}#safety-command .row .btn{margin:6px 6px 0 0}}
