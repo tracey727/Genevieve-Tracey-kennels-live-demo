@@ -1,0 +1,14 @@
+{
+  "name": "genevieve-kennels-command-centre-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/index.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
