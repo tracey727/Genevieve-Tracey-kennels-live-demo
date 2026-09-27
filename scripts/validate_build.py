@@ -59,6 +59,27 @@ for route in ["/api/bookings","/api/custody","/api/rounds","/api/transports","/a
     if route not in worker:
         fail(f"worker missing operational route {route}")
 
+
+for required_path in [
+    ROOT/"scripts/generate_access_token.py",
+    ROOT/"scripts/smoke_api.py",
+    ROOT/"scripts/seed_synthetic.sql",
+    ROOT/"scripts/cleanup_synthetic.sql",
+    ROOT/"docs/PRODUCTION_HANDOVER_CHECKLIST.md",
+]:
+    if not required_path.exists():
+        fail(f"missing deployment-readiness artifact {required_path.relative_to(ROOT)}")
+
+token_helper=(ROOT/"scripts/generate_access_token.py").read_text(encoding="utf-8")
+if "secrets.token_urlsafe" not in token_helper or "hashlib.sha256" not in token_helper:
+    fail("access-token helper must generate high-entropy tokens and SHA-256 hashes")
+
+seed=(ROOT/"scripts/seed_synthetic.sql").read_text(encoding="utf-8")
+cleanup=(ROOT/"scripts/cleanup_synthetic.sql").read_text(encoding="utf-8")
+synthetic_id="11111111-1111-4111-8111-111111111111"
+if synthetic_id not in seed or synthetic_id not in cleanup:
+    fail("synthetic seed and cleanup must share the deterministic facility UUID")
+
 for base in [APP,ROOT/"worker",ROOT/"docs",ROOT/"migrations"]:
     if base.exists():
         for p in base.rglob("*"):
