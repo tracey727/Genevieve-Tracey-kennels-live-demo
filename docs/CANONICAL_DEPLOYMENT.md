@@ -14,15 +14,17 @@ The old dog-kennels repository remains a recovery/source reference only. Do not 
 
 1. Create a Neon database/branch dedicated to kennels.
 2. Create a least-privilege runtime role for the Worker. Do not use the Neon owner credential at runtime.
-3. Apply `migrations/0001_core.sql`.
+3. Apply `migrations/0001_core.sql`, then `migrations/0002_operations.sql`.
 4. Create one facility UUID.
 5. Generate a long random bearer token, store only its SHA-256 hash in `access_tokens`, and give the clear token only to the authorised user/device.
 6. Create Cloudflare Hyperdrive with the runtime-role connection string.
 7. Bind it to the Worker as `HYPERDRIVE`.
 8. Deploy with `npx wrangler deploy`.
 9. Verify `GET /api/health` and confirm the reported database role is the dedicated runtime role.
-10. Verify authenticated facility isolation, write/audit behaviour and revoked-token rejection with synthetic data.
-11. Do not enter real owner, animal medical, staff or payment data until privacy, retention, incident response, backup and legal/WHS/veterinary review are complete.
+10. Verify internal role access across animals, bookings, custody, rounds, transport, incidents, safety, stock, compliance and audit routes.
+11. Verify an owner token can see only its scoped animal and approved owner updates, and cannot call internal routes.
+12. Verify facility isolation, write/audit behaviour and revoked-token rejection with synthetic data.
+13. Do not enter real owner, animal medical, staff or payment data until privacy, retention, incident response, backup and legal/WHS/veterinary review are complete.
 
 ## Auth model
 
