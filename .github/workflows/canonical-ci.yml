@@ -1,0 +1,32 @@
+name: Canonical Kennels CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in GENEVIEVE_CATS_DOGS_LIVE_DEMO/*.js worker/src/*.js; do
+            echo "Checking $file"
+            node --check "$file"
+          done
+
+      - name: Canonical integrity validation
+        run: python3 scripts/validate_build.py
