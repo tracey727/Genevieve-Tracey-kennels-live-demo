@@ -39,3 +39,8 @@ The polished demonstration remains browser-storage based so it stays safe to dem
 ## Alert rule
 
 Expired stock is **RED** and must be removed from use. Expiring-within-30-days or low stock is **AMBER**. Normal/current is **GREEN**. Evidence/data uncertainty should be held for review rather than silently shown as clear.
+
+
+## Resolved live infrastructure
+
+For the exact Neon production host, database, runtime role and Hyperdrive values, see `docs/CLOUDFLARE_HYPERDRIVE_SETUP.md`.
