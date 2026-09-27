@@ -79,3 +79,27 @@ jobs:
               'audit_events','staff_members','bookings','custody_records','rounds','transports',
               'alerts','emergency_state','owner_updates','pickup_authority_requests'
             );" | grep -qx "21"
+
+      - name: Load synthetic simulator dataset
+        run: |
+          set -euo pipefail
+          psql -h 127.0.0.1 -U postgres -d kennels_ci -v ON_ERROR_STOP=1 -f scripts/seed_synthetic.sql
+
+      - name: Verify synthetic simulator coverage
+        run: |
+          set -euo pipefail
+          psql -h 127.0.0.1 -U postgres -d kennels_ci -Atc "
+            SELECT
+              (SELECT count(*) FROM facilities WHERE id='11111111-1111-4111-8111-111111111111') || ':' ||
+              (SELECT count(*) FROM animals WHERE facility_id='11111111-1111-4111-8111-111111111111') || ':' ||
+              (SELECT count(*) FROM staff_members WHERE facility_id='11111111-1111-4111-8111-111111111111') || ':' ||
+              (SELECT count(*) FROM kennels WHERE facility_id='11111111-1111-4111-8111-111111111111') || ':' ||
+              (SELECT count(*) FROM stock_items WHERE facility_id='11111111-1111-4111-8111-111111111111') || ':' ||
+              (SELECT count(*) FROM alerts WHERE facility_id='11111111-1111-4111-8111-111111111111');" | grep -qx "1:6:4:6:5:3"
+
+      - name: Clean synthetic simulator dataset
+        run: |
+          set -euo pipefail
+          psql -h 127.0.0.1 -U postgres -d kennels_ci -v ON_ERROR_STOP=1 -f scripts/cleanup_synthetic.sql
+          psql -h 127.0.0.1 -U postgres -d kennels_ci -Atc "
+            SELECT count(*) FROM facilities WHERE id='11111111-1111-4111-8111-111111111111';" | grep -qx "0"
