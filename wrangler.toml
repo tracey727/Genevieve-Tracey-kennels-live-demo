@@ -1,0 +1,16 @@
+name = "genevieve-kennels-command-centre"
+main = "worker/src/index.js"
+compatibility_date = "2026-09-27"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./GENEVIEVE_CATS_DOGS_LIVE_DEMO"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[vars]
+APP_ENV = "production"
+
+# Production requires a Hyperdrive binding named HYPERDRIVE.
+# Do not commit Neon credentials or a privileged database owner password.
+# Add the Hyperdrive binding in Cloudflare using the dedicated kennel runtime role.
