@@ -10,6 +10,8 @@
 - Existing kennel/cattery bookings, custody, placement, rounds, emergency, incidents, transport and owner views are preserved.
 - Cloudflare Worker API exists with server-side token-to-facility binding and role-gated writes.
 - Neon schema exists with facility isolation and immutable-style audit events.
+- Operational schema/API coverage now includes staff, bookings, custody, rounds, transport, alerts, emergency state, owner updates and pickup-authority requests.
+- Owner API tokens are scoped to one animal and are blocked from internal routes.
 - Cloudflare static-assets configuration exists.
 - Manual production deployment workflow exists and fails closed when required secrets are missing.
 - Vercel runtime/configuration artifacts have been removed from the canonical branch.
@@ -20,7 +22,7 @@
 These cannot be truthfully marked complete from repository code alone:
 
 1. Provision/confirm the kennel Neon project and dedicated runtime role.
-2. Apply `migrations/0001_core.sql`.
+2. Apply `migrations/0001_core.sql` and `migrations/0002_operations.sql`.
 3. Provision first facility and hashed access token.
 4. Create Cloudflare Hyperdrive and set GitHub production secrets:
    - `CLOUDFLARE_API_TOKEN`
