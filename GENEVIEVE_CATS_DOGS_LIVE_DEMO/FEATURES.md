@@ -49,6 +49,9 @@
 - Server-side token-to-facility binding
 - Hashed bearer-token lookup
 - Role-gated writes
+- Bookings, custody, rounds, transport, alerts and emergency API routes
+- Stock, compliance and workforce API routes
+- Restricted owner token scope and pickup-authority workflow
 - Server audit events
 - Cloudflare static-asset serving configuration
 - CI integrity checks

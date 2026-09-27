@@ -7,11 +7,13 @@ const JSON_HEADERS={
   'referrer-policy':'no-referrer',
   'permissions-policy':'camera=(), microphone=(), geolocation=()'
 };
-const ROLES=new Set(['manager','attendant','driver','reception','auditor']);
+const ROLES=new Set(['manager','attendant','driver','reception','auditor','owner']);
 const WRITE_ANIMALS=new Set(['manager','reception']);
 const WRITE_CARE=new Set(['manager','attendant']);
 const WRITE_INCIDENTS=new Set(['manager','attendant','driver','reception']);
 const WRITE_SAFETY=new Set(['manager','attendant']);
+const WRITE_OPERATIONS=new Set(['manager','attendant','driver','reception']);
+const MANAGER_RECEPTION=new Set(['manager','reception']);
 
 function reply(body,status=200,extra={}){return new Response(JSON.stringify(body),{status,headers:{...JSON_HEADERS,...extra}})}
 function isUuid(v){return typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)}
@@ -32,7 +34,7 @@ async function authenticate(db,request){
   if(!m)throw Object.assign(new Error('authentication required'),{status:401});
   const hash=await sha256(m[1]);
   const r=await db.query(`
-    SELECT t.id,t.facility_id,t.subject,t.display_name,t.role
+    SELECT t.id,t.facility_id,t.subject,t.display_name,t.role,t.animal_id
     FROM access_tokens t JOIN facilities f ON f.id=t.facility_id
     WHERE t.token_hash=$1 AND t.revoked_at IS NULL
       AND (t.expires_at IS NULL OR t.expires_at>now()) AND f.active=true
@@ -68,7 +70,152 @@ async function patchAnimal(db,auth,id,body){
 async function route(db,request,url,auth){
   const method=request.method.toUpperCase(), f=auth.facility_id;
 
-  if(url.pathname==='/api/session'&&method==='GET')return reply({facilityId:f,subject:auth.subject,displayName:auth.display_name,role:auth.role});
+  if(url.pathname==='/api/session'&&method==='GET')return reply({facilityId:f,subject:auth.subject,displayName:auth.display_name,role:auth.role,animalId:auth.animal_id||null});
+
+  // Owner tokens are scoped to exactly one animal and may only use the owner routes below.
+  if(url.pathname==='/api/owner/me'&&method==='GET'){
+    if(auth.role!=='owner'||!auth.animal_id)throw Object.assign(new Error('forbidden'),{status:403});
+    const animal=(await db.query('SELECT id,species,name,breed,vaccination_status,diet,medication_plan,behaviour_notes FROM animals WHERE id=$1 AND facility_id=$2 AND active=true',[auth.animal_id,f])).rows[0];
+    if(!animal)throw Object.assign(new Error('animal not found'),{status:404});
+    const updates=(await db.query('SELECT id,message,created_at FROM owner_updates WHERE facility_id=$1 AND animal_id=$2 ORDER BY created_at DESC LIMIT 100',[f,auth.animal_id])).rows;
+    return reply({animal,updates});
+  }
+  if(url.pathname==='/api/owner/pickup-authority-requests'&&method==='POST'){
+    if(auth.role!=='owner'||!auth.animal_id)throw Object.assign(new Error('forbidden'),{status:403});
+    const b=await bodyJson(request),id=crypto.randomUUID();
+    if(!String(b.collector||'').trim())throw Object.assign(new Error('collector is required'),{status:400});
+    const r=await db.query(`INSERT INTO pickup_authority_requests(id,facility_id,animal_id,collector,note)
+      VALUES($1,$2,$3,$4,$5) RETURNING *`,[id,f,auth.animal_id,String(b.collector).trim(),b.note||null]);
+    await audit(db,auth,'pickup_authority.requested','pickup_authority_request',id,{animal_id:auth.animal_id});
+    return reply(r.rows[0],201);
+  }
+  if(auth.role==='owner')throw Object.assign(new Error('forbidden'),{status:403});
+
+  if(url.pathname==='/api/staff'&&method==='GET')
+    return reply((await db.query('SELECT id,subject,name,role,on_shift,first_aid,animal_first_aid FROM staff_members WHERE facility_id=$1 AND active=true ORDER BY name',[f])).rows);
+
+  if(url.pathname==='/api/bookings'&&method==='GET')
+    return reply((await db.query('SELECT * FROM bookings WHERE facility_id=$1 ORDER BY due_at',[f])).rows);
+  if(url.pathname==='/api/bookings'&&method==='POST'){
+    need(auth,MANAGER_RECEPTION);const b=await bodyJson(request),id=crypto.randomUUID();
+    if(!isUuid(b.animal_id)||!['drop_off','pick_up'].includes(b.booking_type)||!b.due_at)throw Object.assign(new Error('animal_id, booking_type and due_at are required'),{status:400});
+    const r=await db.query(`INSERT INTO bookings(id,facility_id,animal_id,booking_type,due_at,status,created_by)
+      VALUES($1,$2,$3,$4,$5,'due',$6) RETURNING *`,[id,f,b.animal_id,b.booking_type,b.due_at,auth.subject]);
+    await audit(db,auth,'booking.created','booking',id,{animal_id:b.animal_id,booking_type:b.booking_type});return reply(r.rows[0],201);
+  }
+  const bm=url.pathname.match(/^\/api\/bookings\/([^/]+)$/);
+  if(bm&&isUuid(bm[1])&&method==='PATCH'){
+    need(auth,MANAGER_RECEPTION);const b=await bodyJson(request);
+    if(!['due','completed','cancelled'].includes(b.status))throw Object.assign(new Error('invalid status'),{status:400});
+    const r=await db.query('UPDATE bookings SET status=$1,updated_at=now() WHERE id=$2 AND facility_id=$3 RETURNING *',[b.status,bm[1],f]);
+    if(!r.rowCount)throw Object.assign(new Error('booking not found'),{status:404});
+    await audit(db,auth,'booking.status','booking',bm[1],{status:b.status});return reply(r.rows[0]);
+  }
+
+  if(url.pathname==='/api/custody'&&method==='GET')
+    return reply((await db.query('SELECT * FROM custody_records WHERE facility_id=$1 ORDER BY occurred_at DESC LIMIT 300',[f])).rows);
+  if(url.pathname==='/api/custody'&&method==='POST'){
+    need(auth,WRITE_OPERATIONS);const b=await bodyJson(request),id=crypto.randomUUID();
+    if(!isUuid(b.animal_id)||!['drop_off','pick_up'].includes(b.direction)||!String(b.condition_note||'').trim())throw Object.assign(new Error('animal_id, direction and condition_note are required'),{status:400});
+    const r=await db.query(`INSERT INTO custody_records(id,facility_id,animal_id,direction,staff_subject,identity_status,authority_detail,vaccination_status,medication_detail,belongings,condition_note)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [id,f,b.animal_id,b.direction,auth.subject,b.identity_status||null,b.authority_detail||null,b.vaccination_status||null,b.medication_detail||null,b.belongings||null,b.condition_note]);
+    await db.query('UPDATE animals SET updated_at=now() WHERE id=$1 AND facility_id=$2',[b.animal_id,f]);
+    await audit(db,auth,'custody.'+b.direction,'custody_record',id,{animal_id:b.animal_id});return reply(r.rows[0],201);
+  }
+
+  if(url.pathname==='/api/rounds'&&method==='GET')
+    return reply((await db.query('SELECT * FROM rounds WHERE facility_id=$1 ORDER BY due_at NULLS LAST',[f])).rows);
+  const rm=url.pathname.match(/^\/api\/rounds\/([^/]+)$/);
+  if(rm&&isUuid(rm[1])&&method==='PATCH'){
+    need(auth,WRITE_SAFETY);const b=await bodyJson(request);
+    const status=b.status;
+    if(status&&!['due','in_progress','completed'].includes(status))throw Object.assign(new Error('invalid status'),{status:400});
+    const progress=Number.isInteger(b.progress)?Math.max(0,Math.min(100,b.progress)):null;
+    const r=await db.query(`UPDATE rounds SET
+      status=COALESCE($1,status),progress=COALESCE($2,progress),checks=COALESCE($3::jsonb,checks),severity=COALESCE($4,severity),note=COALESCE($5,note),
+      completed_at=CASE WHEN $1='completed' THEN now() ELSE completed_at END,updated_at=now()
+      WHERE id=$6 AND facility_id=$7 RETURNING *`,
+      [status||null,progress,b.checks?JSON.stringify(b.checks):null,b.severity||null,b.note||null,rm[1],f]);
+    if(!r.rowCount)throw Object.assign(new Error('round not found'),{status:404});
+    await audit(db,auth,'round.updated','round',rm[1],{status:r.rows[0].status,progress:r.rows[0].progress,severity:r.rows[0].severity});return reply(r.rows[0]);
+  }
+
+  if(url.pathname==='/api/transports'&&method==='GET')
+    return reply((await db.query('SELECT * FROM transports WHERE facility_id=$1 ORDER BY due_at NULLS LAST',[f])).rows);
+  const trm=url.pathname.match(/^\/api\/transports\/([^/]+)$/);
+  if(trm&&isUuid(trm[1])&&method==='PATCH'){
+    need(auth,new Set(['manager','driver']));const b=await bodyJson(request);
+    if(b.status&&!['scheduled','in_progress','completed','cancelled'].includes(b.status))throw Object.assign(new Error('invalid status'),{status:400});
+    const r=await db.query(`UPDATE transports SET status=COALESCE($1,status),temperature=COALESCE($2,temperature),checklist=COALESCE($3::jsonb,checklist),note=COALESCE($4,note),
+      completed_at=CASE WHEN $1='completed' THEN now() ELSE completed_at END,updated_at=now()
+      WHERE id=$5 AND facility_id=$6 RETURNING *`,
+      [b.status||null,b.temperature??null,b.checklist?JSON.stringify(b.checklist):null,b.note||null,trm[1],f]);
+    if(!r.rowCount)throw Object.assign(new Error('transport not found'),{status:404});
+    await audit(db,auth,'transport.updated','transport',trm[1],{status:r.rows[0].status,temperature:r.rows[0].temperature});return reply(r.rows[0]);
+  }
+
+  if(url.pathname==='/api/alerts'&&method==='GET')
+    return reply((await db.query('SELECT * FROM alerts WHERE facility_id=$1 ORDER BY created_at DESC LIMIT 300',[f])).rows);
+  const alm=url.pathname.match(/^\/api\/alerts\/([^/]+)$/);
+  if(alm&&isUuid(alm[1])&&method==='PATCH'){
+    need(auth,WRITE_OPERATIONS);const b=await bodyJson(request);
+    if(!['open','closed'].includes(b.status))throw Object.assign(new Error('invalid status'),{status:400});
+    const r=await db.query("UPDATE alerts SET status=$1,closed_at=CASE WHEN $1='closed' THEN now() ELSE NULL END WHERE id=$2 AND facility_id=$3 RETURNING *",[b.status,alm[1],f]);
+    if(!r.rowCount)throw Object.assign(new Error('alert not found'),{status:404});
+    await audit(db,auth,'alert.status','alert',alm[1],{status:b.status});return reply(r.rows[0]);
+  }
+
+  if(url.pathname==='/api/emergency'&&method==='GET'){
+    const r=await db.query('SELECT * FROM emergency_state WHERE facility_id=$1',[f]);
+    return reply(r.rows[0]||{facility_id:f,active:false,type:null,checks:{}});
+  }
+  if(url.pathname==='/api/emergency'&&method==='POST'){
+    need(auth,new Set(['manager','attendant']));const b=await bodyJson(request);
+    if(b.action==='activate'){
+      if(!String(b.type||'').trim())throw Object.assign(new Error('type is required'),{status:400});
+      const r=await db.query(`INSERT INTO emergency_state(facility_id,active,type,owner_subject,started_at,checks,stood_down_at,updated_at)
+        VALUES($1,true,$2,$3,now(),'{}'::jsonb,NULL,now())
+        ON CONFLICT(facility_id) DO UPDATE SET active=true,type=excluded.type,owner_subject=excluded.owner_subject,started_at=now(),checks='{}'::jsonb,stood_down_at=NULL,updated_at=now()
+        RETURNING *`,[f,b.type,auth.subject]);
+      await audit(db,auth,'emergency.activated','emergency',null,{type:b.type});return reply(r.rows[0]);
+    }
+    if(b.action==='check'){
+      const r=await db.query('UPDATE emergency_state SET checks=$1::jsonb,updated_at=now() WHERE facility_id=$2 RETURNING *',[JSON.stringify(b.checks||{}),f]);
+      if(!r.rowCount)throw Object.assign(new Error('no emergency state'),{status:404});
+      await audit(db,auth,'emergency.checks','emergency',null,{});return reply(r.rows[0]);
+    }
+    if(b.action==='stand_down'){
+      const r=await db.query("UPDATE emergency_state SET active=false,stood_down_at=now(),updated_at=now() WHERE facility_id=$1 RETURNING *",[f]);
+      if(!r.rowCount)throw Object.assign(new Error('no emergency state'),{status:404});
+      await audit(db,auth,'emergency.stood_down','emergency',null,{});return reply(r.rows[0]);
+    }
+    throw Object.assign(new Error('invalid emergency action'),{status:400});
+  }
+
+  if(url.pathname==='/api/owner-updates'&&method==='GET'){
+    const animalId=url.searchParams.get('animal_id');
+    if(!isUuid(animalId))throw Object.assign(new Error('valid animal_id required'),{status:400});
+    return reply((await db.query('SELECT * FROM owner_updates WHERE facility_id=$1 AND animal_id=$2 ORDER BY created_at DESC LIMIT 100',[f,animalId])).rows);
+  }
+  if(url.pathname==='/api/owner-updates'&&method==='POST'){
+    need(auth,MANAGER_RECEPTION);const b=await bodyJson(request),id=crypto.randomUUID();
+    if(!isUuid(b.animal_id)||!String(b.message||'').trim())throw Object.assign(new Error('animal_id and message are required'),{status:400});
+    const r=await db.query('INSERT INTO owner_updates(id,facility_id,animal_id,message,approved_by) VALUES($1,$2,$3,$4,$5) RETURNING *',[id,f,b.animal_id,b.message,auth.subject]);
+    await audit(db,auth,'owner_update.created','owner_update',id,{animal_id:b.animal_id});return reply(r.rows[0],201);
+  }
+  if(url.pathname==='/api/pickup-authority-requests'&&method==='GET'){
+    need(auth,MANAGER_RECEPTION);return reply((await db.query('SELECT * FROM pickup_authority_requests WHERE facility_id=$1 ORDER BY created_at DESC',[f])).rows);
+  }
+  const prm=url.pathname.match(/^\/api\/pickup-authority-requests\/([^/]+)$/);
+  if(prm&&isUuid(prm[1])&&method==='PATCH'){
+    need(auth,MANAGER_RECEPTION);const b=await bodyJson(request);
+    if(!['approved','declined','cancelled','pending'].includes(b.status))throw Object.assign(new Error('invalid status'),{status:400});
+    const r=await db.query('UPDATE pickup_authority_requests SET status=$1,reviewed_by=$2,reviewed_at=now() WHERE id=$3 AND facility_id=$4 RETURNING *',[b.status,auth.subject,prm[1],f]);
+    if(!r.rowCount)throw Object.assign(new Error('request not found'),{status:404});
+    await audit(db,auth,'pickup_authority.reviewed','pickup_authority_request',prm[1],{status:b.status});return reply(r.rows[0]);
+  }
+
   if(url.pathname==='/api/dashboard'&&method==='GET'){
     const [animals,tasks,incidents,kennels,redStock]=await Promise.all([
       db.query('SELECT count(*)::int count FROM animals WHERE facility_id=$1 AND active=true',[f]),
@@ -134,7 +281,38 @@ async function route(db,request,url,auth){
     await audit(db,auth,'physio.observation','physio_record',id,{animal_id:b.animal_id,action:b.action});return reply(r.rows[0],201)
   }
   if(url.pathname==='/api/stock'&&method==='GET')return reply((await db.query(`SELECT *,CASE WHEN expiry IS NOT NULL AND expiry<current_date THEN 'red' WHEN expiry IS NOT NULL AND expiry<=current_date+30 THEN 'amber' WHEN quantity<minimum THEN 'amber' ELSE 'green' END assurance_state FROM stock_items WHERE facility_id=$1 ORDER BY category,item`,[f])).rows);
+  if(url.pathname==='/api/stock'&&method==='POST'){
+    need(auth,MANAGER_RECEPTION);const b=await bodyJson(request),id=crypto.randomUUID();
+    if(!String(b.item||'').trim()||!String(b.category||'').trim())throw Object.assign(new Error('category and item are required'),{status:400});
+    const r=await db.query(`INSERT INTO stock_items(id,facility_id,category,item,quantity,unit,minimum,expiry,sds_current)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [id,f,b.category,b.item,Number(b.quantity||0),b.unit||null,Number(b.minimum||0),b.expiry||null,b.sds_current??null]);
+    await audit(db,auth,'stock.created','stock_item',id,{item:b.item});return reply(r.rows[0],201);
+  }
+  const sm=url.pathname.match(/^\/api\/stock\/([^/]+)$/);
+  if(sm&&isUuid(sm[1])&&method==='PATCH'){
+    need(auth,MANAGER_RECEPTION);const b=await bodyJson(request);
+    const r=await db.query(`UPDATE stock_items SET quantity=COALESCE($1,quantity),minimum=COALESCE($2,minimum),expiry=COALESCE($3,expiry),sds_current=COALESCE($4,sds_current),updated_at=now()
+      WHERE id=$5 AND facility_id=$6 RETURNING *`,[b.quantity??null,b.minimum??null,b.expiry??null,b.sds_current??null,sm[1],f]);
+    if(!r.rowCount)throw Object.assign(new Error('stock item not found'),{status:404});
+    await audit(db,auth,'stock.updated','stock_item',sm[1],{});return reply(r.rows[0]);
+  }
+  if(url.pathname==='/api/workforce-events'&&method==='POST'){
+    need(auth,new Set(['manager','attendant']));const b=await bodyJson(request),id=crypto.randomUUID();
+    if(!['break','close_shift','overtime','lone_worker_check'].includes(b.event_type))throw Object.assign(new Error('invalid event_type'),{status:400});
+    const r=await db.query('INSERT INTO workforce_events(id,facility_id,subject,event_type,minutes,detail) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[id,f,b.subject||auth.subject,b.event_type,b.minutes??null,b.detail||null]);
+    await audit(db,auth,'workforce.event','workforce_event',id,{event_type:b.event_type,subject:b.subject||auth.subject});return reply(r.rows[0],201);
+  }
   if(url.pathname==='/api/compliance'&&method==='GET')return reply((await db.query('SELECT * FROM compliance_evidence WHERE facility_id=$1 ORDER BY item',[f])).rows);
+  if(url.pathname==='/api/compliance'&&method==='POST'){
+    need(auth,new Set(['manager','auditor']));const b=await bodyJson(request),id=crypto.randomUUID();
+    if(!String(b.item||'').trim()||!['current','not_current','hold'].includes(b.status))throw Object.assign(new Error('item and valid status are required'),{status:400});
+    const r=await db.query(`INSERT INTO compliance_evidence(id,facility_id,item,status,evidence_ref,reviewed_by,reviewed_at)
+      VALUES($1,$2,$3,$4,$5,$6,now())
+      ON CONFLICT(facility_id,item) DO UPDATE SET status=excluded.status,evidence_ref=excluded.evidence_ref,reviewed_by=excluded.reviewed_by,reviewed_at=now()
+      RETURNING *`,[id,f,b.item,b.status,b.evidence_ref||null,auth.subject]);
+    await audit(db,auth,'compliance.updated','compliance_evidence',r.rows[0].id,{item:b.item,status:b.status});return reply(r.rows[0]);
+  }
   if(url.pathname==='/api/audit'&&method==='GET')return reply((await db.query('SELECT id,actor_subject,actor_role,event_type,entity_type,entity_id,detail,occurred_at FROM audit_events WHERE facility_id=$1 ORDER BY occurred_at DESC LIMIT 300',[f])).rows);
 
   return reply({error:'not found'},404)
