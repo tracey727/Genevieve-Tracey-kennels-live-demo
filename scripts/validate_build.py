@@ -50,6 +50,15 @@ for table in ["facilities","access_tokens","animals","kennels","care_tasks","inc
     if f"CREATE TABLE {table}" not in migration:
         fail(f"migration missing table {table}")
 
+operations=(ROOT/"migrations/0002_operations.sql").read_text(encoding="utf-8")
+for table in ["staff_members","bookings","custody_records","rounds","transports","alerts","emergency_state","owner_updates","pickup_authority_requests"]:
+    if f"CREATE TABLE {table}" not in operations:
+        fail(f"operations migration missing table {table}")
+
+for route in ["/api/bookings","/api/custody","/api/rounds","/api/transports","/api/alerts","/api/emergency","/api/owner/me","/api/owner/pickup-authority-requests","/api/workforce-events"]:
+    if route not in worker:
+        fail(f"worker missing operational route {route}")
+
 for base in [APP,ROOT/"worker",ROOT/"docs",ROOT/"migrations"]:
     if base.exists():
         for p in base.rglob("*"):
