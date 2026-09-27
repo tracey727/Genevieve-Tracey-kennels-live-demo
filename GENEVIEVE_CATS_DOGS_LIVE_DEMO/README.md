@@ -1,68 +1,58 @@
-# GENEVIEVE App™ Cats & Dogs Care Command — Live Demo
+# GENEVIEVE App™ Cats & Dogs Care Command — Canonical Kennels Command Centre
 
-A static, GitHub- and Vercel-compatible demonstration for combined boarding kennels and cattery operations.
+This folder is the canonical Cats & Dogs kennel/cattery interface. It preserves the richer multi-species experience and now includes the useful recovered Safety Command functions rebuilt cleanly rather than merging the corrupted recovery HTML.
 
-## Main pages
+## Main views
 
 - `index.html` — management command dashboard
 - `employee.html` — attendant phone rounds and tasks
 - `transport.html` — driver pickup/delivery and handover checks
-- `owner.html` — limited owner portal demonstration
+- `owner.html` — restricted owner portal demonstration
+- Safety Command Centre — daily operations, workforce safety/fairness, mobility/physio evidence, stock/expiry assurance and compliance evidence register
 
-Both supplied GENEVIEVE logos appear in the management and phone views. Mr Gruff's supplied photograph is used in his profile.
-
-## What works in the demo
+## Operational capabilities
 
 - Cats and dogs with species-specific records
-- Current facility state and safety colours
-- Bookings and intake
-- Drop-off and pickup custody records
-- Rooms, dog runs and cat suites
-- Feeding, medication, health and other care tasks
-- Species-specific employee rounds
-- Amber/red alerts, incidents and SOS
-- Staff and WHS overview
-- Optional transport chain-of-custody workflow
-- Owner updates and pickup-authorisation request
-- Audit trail and JSON data export
-- Offline browser cache after the first hosted visit
+- Bookings, intake, drop-off and authorised pickup
+- Dog runs, cat suites, isolation and medical rooms
+- Explainable placement/matching support with human decision authority
+- Feeding, medication, welfare, physio/mobility, grooming and vet tasks
+- Live employee rounds
+- Transport chain of custody
+- Emergency command scenarios and headcount
+- Incidents, near misses, SOS and audit evidence
+- Stock low-level and expiry controls; **expired stock is RED**
+- Daily morning/midday/evening assurance checks
+- Staff break and closing-shift evidence
+- Compliance evidence register
+- Offline cache for demonstration use
 - Same-browser tab synchronisation using `BroadcastChannel` and `localStorage`
 
-## Important demo limitation
+## Architecture
 
-This package is deliberately static so it uploads easily and opens on a Windows computer without npm. It does **not** securely sync separate physical phones. Production use requires:
+Production architecture is locked to **GitHub + Cloudflare + Neon**.
 
-- authenticated staff and owner accounts
-- a secure hosted database
-- role-based permissions
-- encrypted connections and backups
-- audit-safe server timestamps
-- privacy, retention and breach procedures
-- a tested incident and business-continuity plan
-- review by the kennel's legal, council, veterinary, WHS and insurance advisers
+The repository now contains:
 
-Do not enter real personal, medical, employee or payment data into this static demonstration.
+- `worker/` — authenticated Cloudflare Worker API
+- `migrations/0001_core.sql` — Neon schema
+- `wrangler.toml` — Cloudflare Worker + static assets configuration
+- `docs/CANONICAL_DEPLOYMENT.md` — deployment and security gate
 
-## Open on your computer
+The browser demonstration intentionally remains synthetic/local until the authenticated API, Hyperdrive and Neon runtime role are deployed and verified.
 
-1. Extract the ZIP.
-2. Double-click `index.html`.
-3. Open `employee.html` in another browser tab to demonstrate live rounds updating the dashboard.
+## Important safety boundary
 
-## Deploy to GitHub and Vercel
+This system supports operations and evidence. It does not replace kennel management, trained staff judgement, veterinarians, emergency services, legal advisers, WHS obligations, insurers or council/regulatory requirements.
 
-Upload the **contents** of this folder so `index.html` is at the repository root.
+Do not enter real owner, animal medical, employee or payment data into the static browser demonstration.
 
-Vercel settings:
+## Local demonstration
 
-- Framework Preset: `Other`
-- Root Directory: `./`
-- Build Command: leave blank
-- Install Command: leave blank
-- Output Directory: leave blank
+1. Open `index.html`.
+2. Open `employee.html` in another browser tab to demonstrate live rounds.
+3. Use **Safety Command** to demonstrate daily assurance, workforce evidence, physio observations, stock expiry escalation and compliance evidence.
 
 ## Branding
-
-The supplied logo image files are used without redrawing or recolouring. The app crops only the unused black letterbox area from the GA source image and uses a square crop of Mr Gruff for avatar display.
 
 GENEVIEVE App™ is presented as a trademark. Do not use ® unless registration has been confirmed for the relevant mark and use.
