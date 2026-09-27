@@ -6,7 +6,7 @@ Architecture is locked to **GitHub + Cloudflare + Neon**.
 
 Repository: `tracey727/Genevieve-Tracey-kennels-live-demo`
 
-Build branch: `build/canonical-kennels-command-centre`
+Canonical production branch: `main`
 
 The old dog-kennels repository remains a recovery/source reference only. Do not merge its recovered HTML wholesale.
 

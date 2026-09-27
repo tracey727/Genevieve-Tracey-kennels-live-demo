@@ -6,7 +6,7 @@ This repository is the canonical kennel/cattery source.
 
 **Production architecture:** GitHub + Cloudflare + Neon.
 
-**Current build branch:** `build/canonical-kennels-command-centre`
+**Canonical production branch:** `main`
 
 The older `tracey727/Tracey-Genevieve-App-Dog-Kennels` repository is a recovery/reference source only. Its recovered safety branch contains malformed HTML and encoding corruption and must not be merged wholesale.
 
