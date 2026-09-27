@@ -30,3 +30,52 @@ jobs:
 
       - name: Canonical integrity validation
         run: python3 scripts/validate_build.py
+
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kennels_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d kennels_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: postgres
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure PostgreSQL client
+        shell: bash
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+
+      - name: Apply migrations
+        run: |
+          set -euo pipefail
+          psql -h 127.0.0.1 -U postgres -d kennels_ci -v ON_ERROR_STOP=1 -f migrations/0001_core.sql
+          psql -h 127.0.0.1 -U postgres -d kennels_ci -v ON_ERROR_STOP=1 -f migrations/0002_operations.sql
+
+      - name: Verify critical schema
+        run: |
+          set -euo pipefail
+          psql -h 127.0.0.1 -U postgres -d kennels_ci -Atc "
+            SELECT count(*) FROM information_schema.tables
+            WHERE table_schema='public'
+            AND table_name IN (
+              'facilities','access_tokens','animals','kennels','care_tasks','incidents',
+              'stock_items','daily_ops','physio_records','workforce_events','compliance_evidence',
+              'audit_events','staff_members','bookings','custody_records','rounds','transports',
+              'alerts','emergency_state','owner_updates','pickup_authority_requests'
+            );" | grep -qx "21"
