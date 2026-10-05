@@ -51,7 +51,7 @@ INSERT INTO care_tasks(id,facility_id,animal_id,type,detail,due_at,status,severi
 VALUES
 ('61111111-1111-4111-8111-111111111111','11111111-1111-4111-8111-111111111111','31111111-1111-4111-8111-111111111111','Medication','Give 1 tablet with food',now()+interval '25 minutes','open','amber','attendant.demo'),
 ('61111111-1111-4111-8111-111111111112','11111111-1111-4111-8111-111111111111','31111111-1111-4111-8111-111111111112','Vet appointment','Annual vaccination appointment',now()+interval '280 minutes','open','red','manager.demo'),
-('61111111-1111-4111-8111-111111111113','11111111-1111-4111-8111-111111111111',NULL,'Facility','Check Cat Suite 6 airlock before Simba arrives',now()+interval '55 minutes','open','yellow','attendant.demo')
+('61111111-1111-4111-8111-111111111113','11111111-1111-4111-8111-111111111111',NULL,'Facility','Check Cat Suite 6 airlock before Simba arrives',now()+interval '55 minutes','open','amber','attendant.demo')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO rounds(id,facility_id,zone,species,due_at,status,progress,assigned_subject,checks,severity,note)
