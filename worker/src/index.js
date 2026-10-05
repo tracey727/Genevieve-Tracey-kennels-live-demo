@@ -257,7 +257,7 @@ async function route(db,request,url,auth){
   if(url.pathname==='/api/incidents'&&method==='GET')return reply((await db.query('SELECT * FROM incidents WHERE facility_id=$1 ORDER BY occurred_at DESC',[f])).rows);
   if(url.pathname==='/api/incidents'&&method==='POST'){
     need(auth,WRITE_INCIDENTS);const b=await bodyJson(request),id=crypto.randomUUID();
-    if(!['yellow','amber','red'].includes(b.severity))throw Object.assign(new Error('invalid severity'),{status:400});
+    if(!['amber','amber','red'].includes(b.severity))throw Object.assign(new Error('invalid severity'),{status:400});
     const r=await db.query(`INSERT INTO incidents(id,facility_id,animal_id,type,severity,detail,controls,status,reported_by)
       VALUES($1,$2,$3,$4,$5,$6,$7,'open',$8) RETURNING *`,
       [id,f,b.animal_id||null,b.type,b.severity,b.detail||'',b.controls||'',auth.subject]);
