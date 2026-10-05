@@ -61,7 +61,7 @@ CREATE TABLE rounds (
   progress integer NOT NULL DEFAULT 0 CHECK (progress BETWEEN 0 AND 100),
   assigned_subject text,
   checks jsonb NOT NULL DEFAULT '{}'::jsonb,
-  severity text NOT NULL DEFAULT 'green' CHECK (severity IN ('green','yellow','amber','red','hold')),
+  severity text NOT NULL DEFAULT 'green' CHECK (severity IN ('green','amber','red','hold')),
   note text,
   completed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -92,7 +92,7 @@ CREATE INDEX transports_facility_due_idx ON transports(facility_id,status,due_at
 CREATE TABLE alerts (
   id uuid PRIMARY KEY,
   facility_id uuid NOT NULL REFERENCES facilities(id) ON DELETE CASCADE,
-  severity text NOT NULL CHECK (severity IN ('green','yellow','amber','red','hold')),
+  severity text NOT NULL CHECK (severity IN ('green','amber','red','hold')),
   title text NOT NULL,
   detail text NOT NULL,
   owner_subject text,
