@@ -47,7 +47,7 @@ CREATE TABLE kennels (
   id uuid PRIMARY KEY,
   facility_id uuid NOT NULL REFERENCES facilities(id) ON DELETE CASCADE,
   name text NOT NULL, zone text, species text NOT NULL CHECK (species IN ('Dog','Cat','Both')),
-  type text, state text NOT NULL DEFAULT 'green' CHECK (state IN ('green','yellow','amber','red','hold')),
+  type text, state text NOT NULL DEFAULT 'green' CHECK (state IN ('green','amber','red','hold')),
   temperature numeric(5,2), humidity numeric(5,2), gate_status text,
   occupied_animal_id uuid REFERENCES animals(id) ON DELETE SET NULL,
   active boolean NOT NULL DEFAULT true,
@@ -61,7 +61,7 @@ CREATE TABLE care_tasks (
   animal_id uuid REFERENCES animals(id) ON DELETE SET NULL,
   type text NOT NULL, detail text NOT NULL DEFAULT '', due_at timestamptz,
   status text NOT NULL DEFAULT 'open' CHECK (status IN ('open','in_progress','completed','cancelled')),
-  severity text NOT NULL DEFAULT 'green' CHECK (severity IN ('green','yellow','amber','red','hold')),
+  severity text NOT NULL DEFAULT 'green' CHECK (severity IN ('green','amber','red','hold')),
   assigned_subject text, completed_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -71,7 +71,7 @@ CREATE TABLE incidents (
   id uuid PRIMARY KEY,
   facility_id uuid NOT NULL REFERENCES facilities(id) ON DELETE CASCADE,
   animal_id uuid REFERENCES animals(id) ON DELETE SET NULL,
-  type text NOT NULL, severity text NOT NULL CHECK (severity IN ('yellow','amber','red')),
+  type text NOT NULL, severity text NOT NULL CHECK (severity IN ('amber','red','hold')),
   detail text NOT NULL, controls text NOT NULL DEFAULT '',
   status text NOT NULL DEFAULT 'open' CHECK (status IN ('open','review','closed')),
   reported_by text NOT NULL, occurred_at timestamptz NOT NULL DEFAULT now(),
