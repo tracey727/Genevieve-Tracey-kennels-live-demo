@@ -19,7 +19,7 @@
       {id:'a2',name:'Bella',species:'Dog',breed:'Labradoodle',sex:'Female',age:'5 yrs',weight:'21 kg',status:'In care',room:'Dog Run A2',light:'green',owner:'Sam Lee',vaccination:'Current',allergies:'None known',diet:'Own food · 1 cup twice daily',medication:'Tablet with food 9:45am',behaviour:'Friendly; may jump at gate',pickupAuthorised:'Sam Lee; Jamie Lee',medicalPriority:true},
       {id:'a3',name:'Max',species:'Dog',breed:'German Shepherd',sex:'Male',age:'6 yrs',weight:'36 kg',status:'In care',room:'Quiet Dog Run 1',light:'amber',owner:'Chris Nguyen',vaccination:'Current',allergies:'Beef',diet:'Large breed diet',medication:'Annual vaccination appointment 2:00pm',behaviour:'Reactive to unfamiliar males; two-person movement',pickupAuthorised:'Chris Nguyen',medicalPriority:true},
       {id:'a4',name:'Misty',species:'Cat',breed:'Domestic Shorthair',sex:'Female',age:'8 yrs',weight:'4.5 kg',status:'In care',room:'Cat Suite 3',light:'green',owner:'Rebecca Hall',vaccination:'Current',allergies:'None known',diet:'Renal wet food',medication:'Renal medication 6:00pm',behaviour:'Quiet; prefers hiding box; low handling tolerance',pickupAuthorised:'Rebecca Hall',medicalPriority:true},
-      {id:'a5',name:'Simba',species:'Cat',breed:'Maine Coon',sex:'Male',age:'3 yrs',weight:'7.2 kg',status:'Arriving',room:'Cat Suite 6',light:'yellow',owner:'Ari Patel',vaccination:'Evidence awaiting final check',allergies:'Fish',diet:'Owner supplied',medication:'None',behaviour:'Escape risk at doors; confident once settled',pickupAuthorised:'Ari Patel; Nita Patel',medicalPriority:false},
+      {id:'a5',name:'Simba',species:'Cat',breed:'Maine Coon',sex:'Male',age:'3 yrs',weight:'7.2 kg',status:'Arriving',room:'Cat Suite 6',light:'amber',owner:'Ari Patel',vaccination:'Evidence awaiting final check',allergies:'Fish',diet:'Owner supplied',medication:'None',behaviour:'Escape risk at doors; confident once settled',pickupAuthorised:'Ari Patel; Nita Patel',medicalPriority:false},
       {id:'a6',name:'Luna',species:'Cat',breed:'Ragdoll',sex:'Female',age:'12 yrs',weight:'5.1 kg',status:'In care',room:'Senior Cat Suite 1',light:'green',owner:'Morgan Taylor',vaccination:'Current',allergies:'None known',diet:'Senior wet food · warmed',medication:'Arthritis medication 8:00pm',behaviour:'Senior mobility; step access and low litter tray',pickupAuthorised:'Morgan Taylor',medicalPriority:true}
     ],
     rooms:[
@@ -27,7 +27,7 @@
       {id:'r2',name:'Dog Run B4',species:'Dog',type:'General',state:'green',temperature:22.3,humidity:51,gate:'Secure',occupiedBy:'a1'},
       {id:'r3',name:'Quiet Dog Run 1',species:'Dog',type:'Quiet / reactive',state:'amber',temperature:21.8,humidity:50,gate:'Two-person transfer',occupiedBy:'a3'},
       {id:'r4',name:'Cat Suite 3',species:'Cat',type:'Quiet',state:'green',temperature:23.0,humidity:47,gate:'Secure',occupiedBy:'a4'},
-      {id:'r5',name:'Cat Suite 6',species:'Cat',type:'Escape-control',state:'yellow',temperature:22.6,humidity:49,gate:'Airlock check required',occupiedBy:'a5'},
+      {id:'r5',name:'Cat Suite 6',species:'Cat',type:'Escape-control',state:'amber',temperature:22.6,humidity:49,gate:'Airlock check required',occupiedBy:'a5'},
       {id:'r6',name:'Senior Cat Suite 1',species:'Cat',type:'Medical / senior',state:'green',temperature:23.2,humidity:48,gate:'Secure',occupiedBy:'a6'},
       {id:'r7',name:'Isolation & Medical',species:'Both',type:'Isolation',state:'green',temperature:22.0,humidity:50,gate:'Ready',occupiedBy:null}
     ],
@@ -43,7 +43,7 @@
       {id:'t2',animalId:'a3',type:'Vet appointment',detail:'Annual vaccination appointment',due:plus(280),status:'Open',assignedTo:'s1',severity:'red'},
       {id:'t3',animalId:'a4',type:'Medication',detail:'Renal medication',due:plus(500),status:'Open',assignedTo:'s3',severity:'green'},
       {id:'t4',animalId:'a6',type:'Medication',detail:'Arthritis medication',due:plus(620),status:'Open',assignedTo:'s3',severity:'green'},
-      {id:'t5',animalId:null,type:'Facility',detail:'Check Cat Suite 6 airlock before Simba arrives',due:plus(55),status:'Open',assignedTo:'s2',severity:'yellow'}
+      {id:'t5',animalId:null,type:'Facility',detail:'Check Cat Suite 6 airlock before Simba arrives',due:plus(55),status:'Open',assignedTo:'s2',severity:'amber'}
     ],
     rounds:[
       {id:'rd1',zone:'Kennel Block A',species:'Dog',due:plus(-80),status:'Completed',progress:100,assignedTo:'s3',completedAt:plus(-75),checks:{}},
@@ -68,7 +68,7 @@
     emergency:{active:false,type:null,startedAt:null,owner:null,checks:{}},
     alerts:[
       {id:'al1',severity:'amber',title:'Max requires two-person transfer',detail:'Quiet Dog Run 1 · behaviour safety instruction',owner:'Sarah M',status:'Open',createdAt:now()},
-      {id:'al2',severity:'yellow',title:'Simba vaccination evidence',detail:'Reception must confirm before admission',owner:'Mia D',status:'Open',createdAt:now()}
+      {id:'al2',severity:'amber',title:'Simba vaccination evidence',detail:'Reception must confirm before admission',owner:'Mia D',status:'Open',createdAt:now()}
     ],
     incidents:[
       {id:'i1',severity:'amber',type:'Near miss',animalId:'a3',detail:'Gate crowding observed. No injury. Two-person transfer control reinforced.',createdAt:plus(-1440),status:'Follow-up'},
