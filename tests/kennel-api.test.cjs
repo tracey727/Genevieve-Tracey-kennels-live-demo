@@ -125,3 +125,21 @@ test('stock methods use authenticated API routes',async()=>{
   assert.equal((await api.updateStock('s1',{quantity:5})).quantity,5);
   assert.equal(seen[2].opts.headers.authorization,'Bearer synthetic');
 });
+
+
+test('rounds and transport methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/rounds'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/rounds/r1'&&opts.method==='PATCH')return response(200,{id:'r1',status:'completed'});
+    if(path==='/api/transports'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/transports/x1'&&opts.method==='PATCH')return response(200,{id:'x1',status:'completed'});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.rounds(),[]);
+  assert.equal((await api.updateRound('r1',{status:'completed'})).status,'completed');
+  assert.deepEqual(await api.transports(),[]);
+  assert.equal((await api.updateTransport('x1',{status:'completed'})).status,'completed');
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
+});
