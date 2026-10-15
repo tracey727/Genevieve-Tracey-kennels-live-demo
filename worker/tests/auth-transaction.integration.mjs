@@ -95,6 +95,22 @@ try{
     method:'POST',bearer:token('owner-a'),body:{collector:'Synthetic Collector',note:'Synthetic owner request'}
   }));
   assert.equal(r.status,201,'scoped owner pickup-authority request should be accepted');
+  const pickupRequestId=r.body.id;
+
+  r=await json(await request('/api/pickup-authority-requests',{bearer:token('manager-a')}));
+  assert.equal(r.status,200);
+  assert.ok(r.body.some(x=>x.id===pickupRequestId&&x.animal_id===ANIMAL_A&&x.status==='pending'),'manager must see pending owner pickup-authority request');
+
+  r=await json(await request('/api/pickup-authority-requests/'+pickupRequestId,{
+    method:'PATCH',bearer:token('manager-a'),body:{status:'approved'}
+  }));
+  assert.equal(r.status,200);
+  assert.equal(r.body.status,'approved','manager review must persist approved authority status');
+
+  r=await json(await request('/api/owner/me',{bearer:token('owner-a')}));
+  assert.equal(r.status,200);
+  assert.ok(r.body.pickup_requests.some(x=>x.id===pickupRequestId&&x.status==='approved'),'owner must see reviewed pickup-authority status');
+  assert.ok(!r.body.custody_records,'authority review must not be represented as physical custody release');
 
   r=await json(await request('/api/animals',{bearer:token('manager-a')}));
   assert.equal(r.status,200);
