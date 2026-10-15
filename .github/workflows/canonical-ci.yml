@@ -28,6 +28,9 @@ jobs:
             node --check "$file"
           done
 
+      - name: Authenticated browser API client regression
+        run: node --test tests/kennel-api.test.cjs
+
       - name: Cross-program intelligence regression
         run: node --test tests/kennel-intelligence.test.cjs
 
