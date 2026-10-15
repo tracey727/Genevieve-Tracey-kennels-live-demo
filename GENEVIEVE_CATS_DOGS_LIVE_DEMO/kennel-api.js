@@ -61,6 +61,9 @@
       createBooking:(body)=>request('/api/bookings',{method:'POST',body}),
       custody:()=>request('/api/custody'),
       createCustody:(body)=>request('/api/custody',{method:'POST',body}),
+      tasks:()=>request('/api/tasks'),
+      createTask:(body)=>request('/api/tasks',{method:'POST',body}),
+      updateTask:(id,body)=>request('/api/tasks/'+encodeURIComponent(id),{method:'PATCH',body}),
       request
     };
   }
