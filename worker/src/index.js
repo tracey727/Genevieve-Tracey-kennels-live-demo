@@ -133,6 +133,15 @@ async function route(db,request,url,auth){
     need(auth,WRITE_OPERATIONS);const b=await bodyJson(request),id=crypto.randomUUID();
     if(!isUuid(b.animal_id)||!['drop_off','pick_up'].includes(b.direction)||!String(b.condition_note||'').trim())throw Object.assign(new Error('animal_id, direction and condition_note are required'),{status:400});
     await requireAnimalInFacility(db,auth,b.animal_id);
+    if(b.direction==='drop_off'&&!['Confirmed','Verified'].includes(String(b.identity_status||'')))throw Object.assign(new Error('verified drop-off identity required'),{status:400});
+    if(b.direction==='pick_up'){
+      if(String(b.identity_status||'')!=='Verified')throw Object.assign(new Error('verified collector identity required'),{status:400});
+      const approved=await db.query(
+        "SELECT 1 FROM pickup_authority_requests WHERE facility_id=$1 AND animal_id=$2 AND status='approved' AND lower(collector)=lower($3) LIMIT 1",
+        [f,b.animal_id,String(b.collector||'').trim()]
+      );
+      if(!approved.rowCount)throw Object.assign(new Error('approved pickup authority required'),{status:403});
+    }
     const r=await db.query(`INSERT INTO custody_records(id,facility_id,animal_id,direction,staff_subject,identity_status,authority_detail,vaccination_status,medication_detail,belongings,condition_note)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [id,f,b.animal_id,b.direction,auth.subject,b.identity_status||null,b.authority_detail||null,b.vaccination_status||null,b.medication_detail||null,b.belongings||null,b.condition_note]);
