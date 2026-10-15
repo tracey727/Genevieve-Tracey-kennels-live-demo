@@ -48,6 +48,13 @@ async function requireAnimalInFacility(db,auth,animalId){
   const r=await db.query('SELECT 1 FROM animals WHERE id=$1 AND facility_id=$2 AND active=true',[animalId,auth.facility_id]);
   if(!r.rowCount)throw Object.assign(new Error('animal not found'),{status:404});
 }
+async function requireStaffSubjectInFacility(db,auth,subject){
+  const value=String(subject||'').trim();
+  if(!value)throw Object.assign(new Error('valid assigned staff required'),{status:400});
+  const r=await db.query('SELECT 1 FROM staff_members WHERE facility_id=$1 AND subject=$2 AND active=true',[auth.facility_id,value]);
+  if(!r.rowCount)throw Object.assign(new Error('assigned staff not found'),{status:404});
+  return value;
+}
 async function audit(db,auth,eventType,entityType=null,entityId=null,detail={}){
   await db.query(`INSERT INTO audit_events(facility_id,actor_token_id,actor_subject,actor_role,event_type,entity_type,entity_id,detail)
                   VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`,
@@ -250,9 +257,10 @@ async function route(db,request,url,auth){
   if(url.pathname==='/api/tasks'&&method==='POST'){
     need(auth,WRITE_CARE);const b=await bodyJson(request),id=crypto.randomUUID();
     if(b.animal_id!=null)await requireAnimalInFacility(db,auth,b.animal_id);
+    const assigned=b.assigned_subject!=null?await requireStaffSubjectInFacility(db,auth,b.assigned_subject):null;
     const r=await db.query(`INSERT INTO care_tasks(id,facility_id,animal_id,type,detail,due_at,status,severity,assigned_subject)
       VALUES($1,$2,$3,$4,$5,$6,'open',$7,$8) RETURNING *`,
-      [id,f,b.animal_id||null,b.type,b.detail||'',b.due_at||null,b.severity||'green',b.assigned_subject||null]);
+      [id,f,b.animal_id||null,b.type,b.detail||'',b.due_at||null,b.severity||'green',assigned]);
     await audit(db,auth,'task.created','care_task',id,{type:b.type});return reply(r.rows[0],201)
   }
   const tm=url.pathname.match(/^\/api\/tasks\/([^/]+)$/);
