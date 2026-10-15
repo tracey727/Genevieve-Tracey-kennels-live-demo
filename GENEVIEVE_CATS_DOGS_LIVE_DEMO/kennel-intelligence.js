@@ -29,14 +29,17 @@
     const output=[];
     const day=isoDate(today);
     const seen=new Set();
+    const refCounts=new Map();
+    for(const item of services)if(item&&typeof item.ref==='string'&&item.ref.trim())refCounts.set(item.ref,(refCounts.get(item.ref)||0)+1);
     for(const s of services){
       if(!s||typeof s.ref!=='string'||!s.ref.trim())continue;
       const id='svc:'+s.ref;
-      if(seen.has(id)){
+      if(seen.has(id))continue;
+      seen.add(id);
+      if(refCounts.get(s.ref)>1){
         output.push(find('KEN-REV-DATA:'+s.ref,'KEN-REV-DATA','HOLD','Duplicate service reference',s.ref+' requires data reconciliation.'));
         continue;
       }
-      seen.add(id);
       if(s.status!=='completed')continue;
       const related=invoices.filter(i=>i&&i.serviceRef===s.ref&&i.status!=='void');
       if(s.evidence!=='verified'||cents(s.chargeCents)===null||s.chargeCents===0){
@@ -51,7 +54,7 @@
       if(!i||!i.id||i.status==='void'||i.status==='paid')continue;
       if(i.status!=='issued')continue;
       const service=services.find(s=>s&&s.ref===i.serviceRef);
-      if(!service||service.evidence!=='verified'||i.evidence!=='verified'||cents(i.amountCents)===null||!isoDate(i.dueDate)||!day){
+      if(!service||refCounts.get(i.serviceRef)!==1||service.evidence!=='verified'||i.evidence!=='verified'||cents(i.amountCents)===null||cents(service.chargeCents)===null||i.amountCents!==service.chargeCents||invoices.filter(x=>x&&x.serviceRef===i.serviceRef&&x.status!=='void').length!==1||!isoDate(i.dueDate)||!day){
         output.push(find('KEN-REV-INVOICE-HOLD:'+i.id,'KEN-REV-INVOICE-HOLD','HOLD','Invoice evidence incomplete','Invoice '+i.id+' needs a verified linked service, total, due date and reconciled records.'));
         continue;
       }
