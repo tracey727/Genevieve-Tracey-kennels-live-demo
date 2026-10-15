@@ -41,3 +41,22 @@ test('disconnect removes token and unauthenticated request fails closed',async()
   assert.equal(api.hasToken(),false);
   await assert.rejects(()=>api.staff(),e=>e.status===401);
 });
+
+
+test('animal methods stay on authenticated same-origin API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/animals'&&opts.method==='GET')return response(200,[{id:'a1',facility_id:'f1',name:'Demo Dog'}]);
+    if(path==='/api/animals'&&opts.method==='POST')return response(201,{id:'a2',facility_id:'f1',name:'New Dog'});
+    return response(404,{error:'not found'});
+  }});
+  const animals=await api.animals();
+  assert.equal(animals[0].facility_id,'f1');
+  const created=await api.createAnimal({name:'New Dog',species:'Dog'});
+  assert.equal(created.id,'a2');
+  assert.equal(seen[0].path,'/api/animals');
+  assert.equal(seen[1].path,'/api/animals');
+  assert.equal(seen[1].opts.method,'POST');
+  assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic');
+});
