@@ -32,6 +32,7 @@
       <button class="nav-btn" data-screen="kennel-business"><span class="icon">◈</span>Business & Staff Hub</button>
       <button class="nav-btn" data-screen="rounds"><span class="icon">◷</span>Rounds (Live)</button>
       <button class="nav-btn" data-screen="transport"><span class="icon">▰</span>Transport</button>
+      <button class="nav-btn" data-screen="kennel-weather"><span class="icon">⛈</span>Weather & Hazard Safety</button>
       <button class="nav-btn" data-screen="kennel-relocation"><span class="icon">🚐</span>Pet Relocation & Travel</button>
       <button class="nav-btn" data-screen="staff"><span class="icon">♟</span>Staff & WHS</button>
       <button class="nav-btn" data-screen="safety-command"><span class="icon">🛡</span>Safety Command</button>
@@ -122,6 +123,39 @@
 
       
       
+      
+      <section id="kennel-weather" class="screen">
+        <div class="card-head">
+          <div><p class="eyebrow">Nature Has No Borders design reuse · no live emergency feed</p>
+          <h2>Weather & Hazard Safety</h2>
+          <p class="small">For dogs, cats, kennel buildings, staff coverage and pet pickup/delivery/new-home journeys.</p></div>
+          <span class="badge red">LIVE WEATHER NOT CONNECTED</span>
+        </div>
+        <div id="kennelWeatherOverview"></div>
+        <div class="card">
+          <h2>Run a clearly labelled fictional hazard exercise</h2>
+          <p class="small">Select a scenario to rehearse manager checks. This uses the Nature Has No Borders hazard categories, source/expiry checks and separate internal signal rules. It does not generate or obtain an actual emergency warning.</p>
+          <div class="button-row">
+            <button type="button" class="btn amber" data-hazard-scenario="heat">Simulate extreme heat</button>
+            <button type="button" class="btn amber" data-hazard-scenario="severe_storm">Simulate severe storm</button>
+            <button type="button" class="btn amber" data-hazard-scenario="flood">Simulate flooding</button>
+            <button type="button" class="btn red" data-hazard-scenario="bushfire">Simulate bushfire/smoke</button>
+            <button type="button" class="btn red" data-hazard-scenario="cyclone">Simulate cyclone</button>
+            <button type="button" class="btn secondary" data-hazard-scenario="coastal_inundation">Simulate coastal inundation</button>
+            <button type="button" class="btn secondary" data-hazard-scenario="infrastructure">Simulate power/water failure</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Weather exercise, welfare checks & acknowledgements</h2><span class="badge outline">SIMULATED ONLY</span></div>
+          <div id="kennelWeatherScenarios"></div>
+        </div>
+        <div class="alert-box">
+          <h3>Official information is separate from GENEVIEVE’s internal flags</h3>
+          <p>Use <a href="https://www.bom.gov.au/" target="_blank" rel="noopener noreferrer">Australia’s Bureau of Meteorology</a> and the relevant state emergency authorities for current warnings. In a life-threatening emergency call 000. An internal AMBER/RED training status is NOT a BOM warning or authority to evacuate.</p>
+          <p>Real integration requires an authorised warning source, source/expiry/geometry verification, secure read-only Nature Has No Borders bridge, staff delivery confirmation, and independently tested fail-closed operation. Never claim all-clear on connection failure.</p>
+        </div>
+      </section>
+
       <section id="kennel-relocation" class="screen">
         <div class="card-head"><div>
           <p class="eyebrow">KENNELS × TRAVELLER BUDGET × ANIMAL PASSPORT × SAFE TRANSPORT</p>
@@ -213,6 +247,7 @@
             <button type="button" class="btn secondary" data-screen-link="safety-command">Staff safety & breaks</button>
             <button type="button" class="btn secondary" data-screen-link="care">Animal care tasks</button>
             <button type="button" class="btn secondary" data-screen-link="kennel-relocation">Pet relocation & travel budget</button>
+            <button type="button" class="btn secondary" data-screen-link="kennel-weather">Weather & hazard safety</button>
           </div>
         </div>
         <div class="grid two">
@@ -301,5 +336,5 @@
 <div id="intakeModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-head"><div><p class="eyebrow">New booking and intake</p><h2>Add a cat or dog</h2></div><button data-close="intakeModal" aria-label="Close">×</button></div><form id="intakeForm"><div class="form-grid three"><label>Species<select name="species"><option>Dog</option><option>Cat</option></select></label><label>Name<input name="name" required></label><label>Breed<input name="breed" required></label><label>Sex<select name="sex"><option>Female</option><option>Male</option><option>Unknown</option></select></label><label>Age<input name="age" placeholder="e.g. 4 yrs"></label><label>Weight<input name="weight" placeholder="e.g. 24 kg"></label><label>Owner<input name="owner" required></label><label>Vaccination<select name="vaccination"><option>Evidence awaiting check</option><option>Current</option><option>Expired / review required</option><option>Medical exemption — verify</option></select></label><label>Room<select name="room"><option>Unassigned — match before admission</option><option>General dog run</option><option>Quiet dog run</option><option>Cat suite</option><option>Senior cat suite</option><option>Isolation & medical</option></select></label></div><div class="form-grid"><label>Diet<textarea name="diet"></textarea></label><label>Medication<textarea name="medication"></textarea></label><label>Allergies<textarea name="allergies"></textarea></label><label>Behaviour and safe handling<textarea name="behaviour"></textarea></label></div><label>Authorised pickup people<input name="pickupAuthorised" required></label><div class="form-grid"><label class="checkline"><input type="checkbox" required> Emergency treatment authority recorded</label><label class="checkline"><input type="checkbox" required> Privacy and communication permissions recorded</label></div><button class="btn" type="submit">Save animal and booking</button></form></div></div>
 
 <div id="incidentModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-head"><div><p class="eyebrow">Incident or near miss</p><h2>Record facts and immediate actions</h2></div><button data-close="incidentModal" aria-label="Close">×</button></div><form id="incidentForm"><div class="form-grid"><label>Type<select name="type"><option>Animal injury</option><option>Worker injury</option><option>Dog bite / cat bite or scratch</option><option>Fight or unsafe interaction</option><option>Escape / gate breach</option><option>Medication or feeding error</option><option>Transport incident</option><option>Near miss</option><option>Other</option></select></label><label>Severity<select name="severity"><option value="amber">Amber — monitor</option><option value="amber">Amber — action required</option><option value="red">Red — urgent / external assessment</option></select></label><label>Animal<select name="animalId"><option value="">Facility / no animal</option></select></label><label>Responsible manager<select name="managerId" data-staff-options></select></label></div><label>What happened<textarea name="detail" required placeholder="Facts only: time, location, people, animals and immediate action"></textarea></label><label>Immediate controls and follow-up<textarea name="controls" required></textarea></label><div class="form-grid"><label class="checkline"><input type="checkbox"> Photograph/evidence preserved where appropriate</label><label class="checkline"><input type="checkbox"> Owner/vet/insurer/WHS notification decision escalated to manager</label></div><button class="btn red" type="submit">Log incident and alert manager</button></form></div></div>
-<script src="./store.js"></script><script src="./shared.js"></script><script src="./app.js"></script><script src="./safety-command.js"></script><script src="./kennel-intelligence.js"></script><script src="./kennel-command-upgrade.js"></script><script src="./kennel-relocation.js"></script><script src="./kennel-relocation-ui.js"></script>
+<script src="./store.js"></script><script src="./shared.js"></script><script src="./app.js"></script><script src="./safety-command.js"></script><script src="./kennel-intelligence.js"></script><script src="./kennel-command-upgrade.js"></script><script src="./kennel-relocation.js"></script><script src="./kennel-relocation-ui.js"></script><script src="./kennel-weather.js"></script><script src="./kennel-weather-ui.js"></script>
 <script src="./register-sw.js"></script></body></html>
