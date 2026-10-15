@@ -108,7 +108,7 @@ try{
 
   await db.query(`ALTER TABLE audit_events
     ADD CONSTRAINT synthetic_force_audit_failure
-    CHECK (event_type <> 'animal.created')`);
+    CHECK (event_type <> 'animal.created') NOT VALID`);
   try{
     const rollbackName='Atomic Rollback '+Date.now();
     r=await json(await request('/api/animals',{
