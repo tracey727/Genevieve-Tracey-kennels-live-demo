@@ -74,6 +74,8 @@
       incidents:()=>request('/api/incidents'),
       createIncident:(body)=>request('/api/incidents',{method:'POST',body}),
       audit:()=>request('/api/audit'),
+      compliance:()=>request('/api/compliance'),
+      saveCompliance:(body)=>request('/api/compliance',{method:'POST',body}),
       request
     };
   }
