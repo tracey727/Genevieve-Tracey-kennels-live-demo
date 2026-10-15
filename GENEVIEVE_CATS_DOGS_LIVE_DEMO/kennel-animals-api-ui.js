@@ -21,6 +21,9 @@
   }
   async function render(){
     if(!connected())return false;
+    const intake=document.getElementById('intakeForm');
+    const save=intake&&intake.querySelector('button[type="submit"]');
+    if(save)save.textContent='Save animal securely';
     const target=document.getElementById('animalCards');
     if(!target)return false;
     try{
