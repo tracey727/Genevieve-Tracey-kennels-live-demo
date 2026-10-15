@@ -349,7 +349,23 @@ export default {
         if(env.ASSETS)return env.ASSETS.fetch(request);
         return new Response('Not found',{status:404})
       }
-      return withDb(env,async db=>route(db,request,url,await authenticate(db,request)));
+      return withDb(env,async db=>{
+        // Read requests remain read-only. Every authenticated mutation and its
+        // audit record commit together, or neither is persisted.
+        const isMutation=!['GET','HEAD','OPTIONS'].includes(method);
+        if(!isMutation)return route(db,request,url,await authenticate(db,request));
+        await db.query('BEGIN');
+        try{
+          const auth=await authenticate(db,request);
+          const response=await route(db,request,url,auth);
+          if(response.status>=400){await db.query('ROLLBACK');return response}
+          await db.query('COMMIT');
+          return response;
+        }catch(error){
+          try{await db.query('ROLLBACK')}catch(rollbackError){console.error('Kennels transaction rollback failed',rollbackError)}
+          throw error;
+        }
+      });
     }catch(e){
       console.error(e);const status=e.status||500;
       const message=status>=500?'server error':e.message;
