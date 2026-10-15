@@ -185,6 +185,17 @@
               <button type="submit" class="btn">Assign follow-up</button>
               <p class="small">Unreturned owner contacts remain open. No messages or real contact details are sent or collected here.</p>
             </form>
+            <form id="continuityFormCallbackClose">
+              <h3>Record a completed owner response</h3>
+              <label>Open follow-up<select name="callbackId" id="continuityCallbackClose" required></select></label>
+              <div class="form-grid">
+                <label>Assigned response staff<select name="completedBy" id="continuityCallbackDoneBy" required></select></label>
+                <label>Independent demo manager reviewer<select name="managerId" id="continuityCallbackManager" required></select></label>
+              </div>
+              <label>Factual completion evidence<textarea name="outcomeNote" maxlength="300" required placeholder="Fictional: owner contacted and update delivered"></textarea></label>
+              <label class="checkline"><input type="checkbox" name="completed" required> Response was actually completed, not merely attempted</label>
+              <button type="submit" class="btn secondary">Record response and close fictional follow-up</button>
+            </form>
           </div>
         </div>
         <div class="grid two">
