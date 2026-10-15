@@ -90,3 +90,11 @@ No new Neon table, Worker endpoint, API token, integration credential, real invo
 **Remaining production work:** Only with the relevant source licence/use approval, owner permission, facility/service-area geolocation authority and privacy protection, create a minimum-necessary **read-only** adapter/bridge from Nature Has No Borders or an authorised source. Server-side it must verify origin, authenticity, authoritative warning wording, timestamp/expiry, coverage and severity, fail closed on outages, capture staff acknowledgements durably and provide a clearly accessible link to current official instructions. Demonstrate safe reconnect and notification delivery on separate staff devices and selected pet relocation journeys. No autonomous evacuation order, dispatch, vehicle-route alteration, public warning, staff instruction override or animal-care decision.
 
 **Commercial scope:** Once source licensing, live deployment and operational acceptance are complete, weather/hazard monitoring and coordination should be included in the **A$249/month Kennels Complete subscription** as a product feature; external data licensing/SMS/telecom charges should be priced as real third-party costs, not concealed.
+
+## Aged Care, Childcare & Psychological Command Centre reuse (15 October)
+
+Detailed source-level findings and explicit prohibitions are in `AUDITS/2026-10-15_AGED_CHILDCARE_PSYCH_REUSE_AUDIT.md`.
+
+Added the independent **Care Continuity & Staff Readiness** demo module: verified care-plan review scheduling, separately attested current staff training evidence, exact authorised-collector preflight without actual custody release, proposed named cover without silent original task-owner mutation, and overdue owner callback follow-up. Ten new automated tests cover these boundaries.
+
+The inspected Aged Care V2.1 ZIP is a fictional-data command centre and not a kennel deployment template; historical Vercel/Render/Docker configurations remain excluded. Childcare Safety V1 is a small historical proof-of-concept, not a live authorisation source. Psychology Phase 19 remains synthetic and its current code contracts do not authorise direct transfer of sensitive data. The Kennels module is original kennel-specific source, and all real-data, role-identity, protected audit and safe handover release gates remain HOLD.
