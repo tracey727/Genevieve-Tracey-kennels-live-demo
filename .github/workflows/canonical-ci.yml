@@ -34,6 +34,9 @@ jobs:
       - name: Pet relocation and travel budget regression
         run: node --test tests/kennel-relocation.test.cjs
 
+      - name: Weather alert source and animal safety regression
+        run: node --test tests/kennel-weather.test.cjs
+
       - name: Canonical integrity validation
         run: python3 scripts/validate_build.py
 
