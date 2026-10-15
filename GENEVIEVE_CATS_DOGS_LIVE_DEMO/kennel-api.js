@@ -57,6 +57,8 @@
       staff:()=>request('/api/staff'),
       animals:()=>request('/api/animals'),
       createAnimal:(body)=>request('/api/animals',{method:'POST',body}),
+      bookings:()=>request('/api/bookings'),
+      createBooking:(body)=>request('/api/bookings',{method:'POST',body}),
       request
     };
   }
