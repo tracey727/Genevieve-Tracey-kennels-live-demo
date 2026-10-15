@@ -25,7 +25,9 @@ for p in list(APP.glob("*.html"))+list(APP.glob("*.js"))+list(APP.glob("*.css"))
         fail(f"{p.relative_to(ROOT)} still references Vercel")
 
 index=(APP/"index.html").read_text(encoding="utf-8")
-for required in ['data-screen="safety-command"','id="safety-command"','safety-command.js']:
+for required in ['data-screen="safety-command"','id="safety-command"','safety-command.js',
+                 'data-screen="kennel-business"','id="kennel-business"','kennel-intelligence.js',
+                 'kennel-command-upgrade.js']:
     if required not in index:
         fail(f"index.html missing {required}")
 
