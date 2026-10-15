@@ -78,6 +78,8 @@
       audit:()=>request('/api/audit'),
       compliance:()=>request('/api/compliance'),
       saveCompliance:(body)=>request('/api/compliance',{method:'POST',body}),
+      dashboard:()=>request('/api/dashboard'),
+      alerts:()=>request('/api/alerts'),
       request
     };
   }
