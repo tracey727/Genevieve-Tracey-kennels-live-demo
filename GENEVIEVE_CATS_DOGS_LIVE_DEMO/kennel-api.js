@@ -83,6 +83,8 @@
       emergency:()=>request('/api/emergency'),
       emergencyAction:(body)=>request('/api/emergency',{method:'POST',body}),
       kennels:()=>request('/api/kennels'),
+      ownerMe:()=>request('/api/owner/me'),
+      ownerPickupRequest:(body)=>request('/api/owner/pickup-authority-requests',{method:'POST',body}),
       request
     };
   }
