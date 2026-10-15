@@ -202,3 +202,15 @@ test('emergency methods use authenticated API and explicit human actions',async(
   assert.equal(JSON.parse(seen[1].opts.body).action,'activate');
   assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
 });
+
+
+test('kennel-room method uses authenticated API route',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/kennels')return response(200,[]);
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.kennels(),[]);
+  assert.equal(seen[0].opts.headers.authorization,'Bearer synthetic');
+});
