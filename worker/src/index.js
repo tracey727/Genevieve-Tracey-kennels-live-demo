@@ -142,8 +142,9 @@ async function route(db,request,url,auth){
       );
       if(!approved.rowCount)throw Object.assign(new Error('approved pickup authority required'),{status:403});
     }
+    await db.query('SELECT pg_advisory_xact_lock(hashtext($1),hashtext($2))',[f,b.animal_id]);
     const latest=await db.query(
-      "SELECT direction FROM custody_records WHERE facility_id=$1 AND animal_id=$2 ORDER BY occurred_at DESC,id DESC LIMIT 1 FOR UPDATE",
+      "SELECT direction FROM custody_records WHERE facility_id=$1 AND animal_id=$2 ORDER BY occurred_at DESC,id DESC LIMIT 1",
       [f,b.animal_id]
     );
     if(b.direction==='pick_up'&&(!latest.rowCount||latest.rows[0].direction!=='drop_off'))
