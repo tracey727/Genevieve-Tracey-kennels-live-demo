@@ -80,6 +80,8 @@
     const invoiceService=$('kennelInvoiceService');
     if(invoiceService){const prev=invoiceService.value;invoiceService.innerHTML=options(h.services,'ref','ref');if(prev&&[...invoiceService.options].some(o=>o.value===prev))invoiceService.value=prev;}
     const paymentInvoice=$('kennelPaymentInvoice');
+    const reconcile=$('kennelReconcileInvoice');
+    if(reconcile){const prev=reconcile.value;reconcile.innerHTML=options(h.invoices,'id','id');if(prev&&[...reconcile.options].some(o=>o.value===prev))reconcile.value=prev;}
     if(paymentInvoice){const prev=paymentInvoice.value;paymentInvoice.innerHTML=options(h.invoices,'id','id');if(prev&&[...paymentInvoice.options].some(o=>o.value===prev))paymentInvoice.value=prev;}
     const stock=$('kennelSupply');
     if(stock)stock.innerHTML='<div class="list">'+(s.stock.length?s.stock.map(item=>{
@@ -136,6 +138,11 @@
         if(!/^[A-Z0-9][A-Z0-9_-]{2,39}$/.test(id0)||h.payments.some(x=>x.id===id0)||amount===null||amount===0)return fail('Enter a unique payment ID and valid amount.');
         if(!d.get('invoiceId'))return fail('Choose a linked invoice.');
         record(s=>{s.opsHub.payments.push({id:id0,invoiceId:d.get('invoiceId'),amountCents:amount,evidence:d.has('verified')?'verified':'hold'});const inv=s.opsHub.invoices.find(x=>x.id===d.get('invoiceId'));if(inv)inv.paymentsReconciled=false;},'Payment evidence recorded; reconciliation reset',id0);
+      }else if(f.id==='kennelFormReconcile'){
+        const invoiceId=d.get('invoiceId');
+        if(!d.has('verified')||!h.invoices.some(x=>x.id===invoiceId))return fail('A manager must verify and select the invoice for reconciliation.');
+        record(s=>{s.opsHub.invoices.find(x=>x.id===invoiceId).paymentsReconciled=true;},
+          'Invoice payment reconciliation verified',String(invoiceId));
       }else if(f.id==='kennelFormHandover'){
         const from=d.get('from'),to=d.get('to'),subject=String(d.get('subject')||'').trim(),dueAt=String(d.get('dueAt')||'');
         if(!subject||subject.length>240||from===to||!Number.isFinite(Date.parse(dueAt)))return fail('Enter a handover, different staff members and valid due date.');
