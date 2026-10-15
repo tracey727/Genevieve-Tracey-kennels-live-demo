@@ -59,6 +59,8 @@
       createAnimal:(body)=>request('/api/animals',{method:'POST',body}),
       bookings:()=>request('/api/bookings'),
       createBooking:(body)=>request('/api/bookings',{method:'POST',body}),
+      custody:()=>request('/api/custody'),
+      createCustody:(body)=>request('/api/custody',{method:'POST',body}),
       request
     };
   }
