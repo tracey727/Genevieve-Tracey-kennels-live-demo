@@ -32,6 +32,7 @@
       <button class="nav-btn" data-screen="kennel-business"><span class="icon">◈</span>Business & Staff Hub</button>
       <button class="nav-btn" data-screen="rounds"><span class="icon">◷</span>Rounds (Live)</button>
       <button class="nav-btn" data-screen="transport"><span class="icon">▰</span>Transport</button>
+      <button class="nav-btn" data-screen="kennel-relocation"><span class="icon">🚐</span>Pet Relocation & Travel</button>
       <button class="nav-btn" data-screen="staff"><span class="icon">♟</span>Staff & WHS</button>
       <button class="nav-btn" data-screen="safety-command"><span class="icon">🛡</span>Safety Command</button>
       <button class="nav-btn" data-screen="emergency"><span class="icon">🚨</span>Emergency Command</button>
@@ -120,6 +121,82 @@
       <section id="compliance" class="screen"><div class="card watermark"><p class="eyebrow">Design support, not legal certification</p><h2>Safety, privacy, animal welfare and insurance controls</h2><p>This demonstration assists record keeping and safer workflows. The operating business must have its own current council approvals, procedures, training, insurance and professional legal advice.</p></div><div class="grid two"><div class="card"><h2>Controls built into the demo</h2><div class="list"><div class="row"><div class="species-icon">🐾</div><div class="row-grow"><b>Animal duty-of-care records</b><small>Water, food, accommodation, health, handling, transport and welfare observations.</small></div></div><div class="row"><div class="species-icon">🛡</div><div class="row-grow"><b>WHS and notifiable-incident prompts</b><small>Serious events require immediate emergency action and external reporting decisions by the business.</small></div></div><div class="row"><div class="species-icon">🔒</div><div class="row-grow"><b>Role-based and minimum-necessary information design</b><small>Production requires secure accounts, database controls, backups and retention settings.</small></div></div><div class="row"><div class="species-icon">▰</div><div class="row-grow"><b>Transport safety checklist</b><small>Secure containment, ventilation, temperature and custody handover.</small></div></div></div></div><div class="card"><h2>Official references for the kennel to review</h2><ul class="small"><li><a href="https://www.business.qld.gov.au/industries/farms-fishing-forestry/agriculture/animal/health/welfare/duty" target="_blank">Queensland animal duty of care</a></li><li><a href="https://www.worksafe.qld.gov.au/safety-and-prevention/hazards/workplace-hazards/agriculture/animal-handling" target="_blank">WorkSafe Queensland animal handling</a></li><li><a href="https://www.worksafe.qld.gov.au/safety-and-prevention/incidents-and-notifications/notify-us-of-an-incident" target="_blank">WHS incident notification</a></li><li><a href="https://www.workcoverqld.com.au/claims-and-insurance/workcover-insurance/types-of-insurance" target="_blank">WorkCover Queensland insurance</a></li><li><a href="https://www.oaic.gov.au/privacy/privacy-guidance-for-organisations-and-government-agencies/handling-personal-information/guide-to-securing-personal-information" target="_blank">OAIC personal information security guidance</a></li><li><a href="https://www.oaic.gov.au/privacy/your-privacy-rights/surveillance-and-monitoring/workplace-monitoring-and-surveillance" target="_blank">Workplace monitoring and surveillance</a></li><li><a href="https://www.legislation.qld.gov.au/view/whole/html/current/act-2001-064" target="_blank">Animal Care and Protection Act 2001 (Qld)</a></li></ul></div></div></section>
 
       
+      
+      <section id="kennel-relocation" class="screen">
+        <div class="card-head"><div>
+          <p class="eyebrow">KENNELS × TRAVELLER BUDGET × ANIMAL PASSPORT × SAFE TRANSPORT</p>
+          <h2>Pet Relocation & Travel Budget</h2>
+          <p class="small">For authorised staff taking rescued, adopted or boarded animals to a new home, foster carer or receiving organisation.</p>
+        </div><span class="badge amber">SYNTHETIC BROWSER DEMO</span></div>
+        <div class="alert-box"><h3>Long-distance journey planning, welfare and handover — not a transport booking service</h3>
+          <p>This kennel module applies Traveller Budget categories, expense tracking, animal-care requirements, the existing driver job register and accepted-custody principles. It does not connect Traveller Budget user accounts, live routing, maps, GPS, payments, dispatch or animal-owner data. Use fictional people and locations here only.</p></div>
+        <div class="card"><h2>Relocation journey overview</h2><div id="relocateSummary"></div></div>
+        <div class="grid two">
+          <div class="card"><h2>Plan a new-home journey</h2>
+            <form id="relocateFormPlan">
+              <label>Trip name<input name="name" placeholder="Fictional foster home transfer" maxlength="100" required></label>
+              <div class="form-grid">
+                <label>Animal<select id="relocateAnimal" name="animalId" required></select></label>
+                <label>Assigned staff driver<select id="relocateDriver" name="driverId" required></select></label>
+              </div>
+              <label>Existing kennel transport job (optional)<select name="transportJobId" id="relocateExistingTransport"></select></label>
+              <div class="form-grid">
+                <label>Origin or pickup area<input name="origin" maxlength="160" placeholder="Demo kennel, Gold Coast" required></label>
+                <label>New home or receiving area<input name="destination" maxlength="160" placeholder="Demo foster service, Brisbane" required></label>
+                <label>Approved trip budget (AUD)<input name="budget" type="number" min="0" step="0.01" required></label>
+                <label>Expected arrival date/time<input name="dueAt" type="datetime-local" required></label>
+              </div>
+              <button type="submit" class="btn">Save planned relocation</button>
+              <p class="small">No distance, ETA, fuel consumption or safety condition is inferred automatically. Verify route and welfare needs with the responsible organisation.</p>
+            </form>
+          </div>
+          <div class="card"><h2>Travel costs and budget</h2>
+            <form id="relocateFormExpense">
+              <label>Trip<select id="relocateTripCost" name="tripId" required></select></label>
+              <div class="form-grid">
+                <label>Expense category<select id="relocateCostCategory" name="category" required></select></label>
+                <label>Expense amount (AUD)<input name="amount" type="number" min="0" step="0.01" required></label>
+              </div>
+              <label>Evidence note<input name="note" maxlength="240" placeholder="Fictional receipt reference or cost note"></label>
+              <label class="checkline"><input name="verified" type="checkbox"> Expense confirmed by an actual source record</label>
+              <button type="submit" class="btn secondary">Record trip expense</button>
+              <p class="small">Expenses on HOLD are excluded from verified actual spend. Costs do not become customer invoices without a separately authorised agreement.</p>
+            </form>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card"><h2>Animal welfare and custody checkpoints</h2>
+            <form id="relocateFormCheck">
+              <label>Trip<select name="tripId" id="relocateTripCheck" required></select></label>
+              <label>Safety or custody check<select name="code" id="relocateCheckType" required></select></label>
+              <label>What staff actually checked<textarea name="note" maxlength="240" required placeholder="Factual observation only. No automatic diagnosis."></textarea></label>
+              <label class="checkline"><input name="verified" type="checkbox" required> Check performed and recorded by the assigned responsible person in this fictional training scenario</label>
+              <button type="submit" class="btn">Record check</button>
+            </form>
+          </div>
+          <div class="card"><h2>Stop, travel and arrival timeline</h2>
+            <form id="relocateFormStage">
+              <label>Trip<select name="tripId" id="relocateTripStage" required></select></label>
+              <div class="form-grid">
+                <label>Milestone<select name="phase"><option>Departed</option><option>En route stop</option><option>Arrived</option></select></label>
+                <label>Stop/area label<input name="location" maxlength="160" required placeholder="Demo rest stop"></label>
+              </div>
+              <label>Welfare or travel note<textarea name="note" maxlength="240" placeholder="Animal observation, water check, care or delay"></textarea></label>
+              <button type="submit" class="btn secondary">Add travel checkpoint</button>
+            </form>
+            <hr>
+            <form id="relocateFormStatus"><h3>Advance trip state</h3>
+              <label>Trip<select name="tripId" id="relocateTripStatus" required></select></label>
+              <label>New state<select name="status"><option value="IN_TRANSIT">In transit</option><option value="ARRIVED">Arrived at receiving location</option><option value="COMPLETED">Completed — authorised receiving handover</option></select></label>
+              <button type="submit" class="btn">Verify required checks and update</button>
+              <p class="small">The demo refuses to mark a transfer completed without all required animal and receiving-custody check records. This does not verify real-world identity or compliance.</p>
+            </form>
+          </div>
+        </div>
+        <div class="card"><h2>Journey and receiving-home evidence</h2><div id="relocateTripList"></div></div>
+        <div class="alert-box"><h3>External release requirements</h3><p>Before real pet moves, the operator must review interstate/council rules, animal welfare, safe-transport requirements, responsible driver hours/rest, veterinary needs, collection/rehoming authority, insurance, data privacy, and contingency/incident arrangements. Human staff remain responsible; this is not proof of delivery, an official permit or a live location tracker.</p></div>
+      </section>
+
       <section id="kennel-business" class="screen">
         <div class="card-head"><div>
           <p class="eyebrow">GENEVIEVE reuse · integrated kennel-specific workflows</p>
@@ -135,6 +212,7 @@
             <button type="button" class="btn secondary" data-load-kennel-examples>Load fictional financial and handover examples</button>
             <button type="button" class="btn secondary" data-screen-link="safety-command">Staff safety & breaks</button>
             <button type="button" class="btn secondary" data-screen-link="care">Animal care tasks</button>
+            <button type="button" class="btn secondary" data-screen-link="kennel-relocation">Pet relocation & travel budget</button>
           </div>
         </div>
         <div class="grid two">
@@ -223,5 +301,5 @@
 <div id="intakeModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-head"><div><p class="eyebrow">New booking and intake</p><h2>Add a cat or dog</h2></div><button data-close="intakeModal" aria-label="Close">×</button></div><form id="intakeForm"><div class="form-grid three"><label>Species<select name="species"><option>Dog</option><option>Cat</option></select></label><label>Name<input name="name" required></label><label>Breed<input name="breed" required></label><label>Sex<select name="sex"><option>Female</option><option>Male</option><option>Unknown</option></select></label><label>Age<input name="age" placeholder="e.g. 4 yrs"></label><label>Weight<input name="weight" placeholder="e.g. 24 kg"></label><label>Owner<input name="owner" required></label><label>Vaccination<select name="vaccination"><option>Evidence awaiting check</option><option>Current</option><option>Expired / review required</option><option>Medical exemption — verify</option></select></label><label>Room<select name="room"><option>Unassigned — match before admission</option><option>General dog run</option><option>Quiet dog run</option><option>Cat suite</option><option>Senior cat suite</option><option>Isolation & medical</option></select></label></div><div class="form-grid"><label>Diet<textarea name="diet"></textarea></label><label>Medication<textarea name="medication"></textarea></label><label>Allergies<textarea name="allergies"></textarea></label><label>Behaviour and safe handling<textarea name="behaviour"></textarea></label></div><label>Authorised pickup people<input name="pickupAuthorised" required></label><div class="form-grid"><label class="checkline"><input type="checkbox" required> Emergency treatment authority recorded</label><label class="checkline"><input type="checkbox" required> Privacy and communication permissions recorded</label></div><button class="btn" type="submit">Save animal and booking</button></form></div></div>
 
 <div id="incidentModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-head"><div><p class="eyebrow">Incident or near miss</p><h2>Record facts and immediate actions</h2></div><button data-close="incidentModal" aria-label="Close">×</button></div><form id="incidentForm"><div class="form-grid"><label>Type<select name="type"><option>Animal injury</option><option>Worker injury</option><option>Dog bite / cat bite or scratch</option><option>Fight or unsafe interaction</option><option>Escape / gate breach</option><option>Medication or feeding error</option><option>Transport incident</option><option>Near miss</option><option>Other</option></select></label><label>Severity<select name="severity"><option value="amber">Amber — monitor</option><option value="amber">Amber — action required</option><option value="red">Red — urgent / external assessment</option></select></label><label>Animal<select name="animalId"><option value="">Facility / no animal</option></select></label><label>Responsible manager<select name="managerId" data-staff-options></select></label></div><label>What happened<textarea name="detail" required placeholder="Facts only: time, location, people, animals and immediate action"></textarea></label><label>Immediate controls and follow-up<textarea name="controls" required></textarea></label><div class="form-grid"><label class="checkline"><input type="checkbox"> Photograph/evidence preserved where appropriate</label><label class="checkline"><input type="checkbox"> Owner/vet/insurer/WHS notification decision escalated to manager</label></div><button class="btn red" type="submit">Log incident and alert manager</button></form></div></div>
-<script src="./store.js"></script><script src="./shared.js"></script><script src="./app.js"></script><script src="./safety-command.js"></script><script src="./kennel-intelligence.js"></script><script src="./kennel-command-upgrade.js"></script>
+<script src="./store.js"></script><script src="./shared.js"></script><script src="./app.js"></script><script src="./safety-command.js"></script><script src="./kennel-intelligence.js"></script><script src="./kennel-command-upgrade.js"></script><script src="./kennel-relocation.js"></script><script src="./kennel-relocation-ui.js"></script>
 <script src="./register-sw.js"></script></body></html>
