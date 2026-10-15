@@ -69,6 +69,12 @@ try{
     `,[id,facility,hash(raw),subject,display,role]);
   }
 
+  await db.query(`
+    INSERT INTO access_tokens(id,facility_id,token_hash,subject,display_name,role,animal_id,revoked_at,expires_at)
+    VALUES('aa111111-1111-4111-8111-111111111115',$1,$2,'owner.a','Owner A','owner',$3,NULL,now()+interval '1 hour')
+    ON CONFLICT(token_hash) DO UPDATE SET animal_id=excluded.animal_id,revoked_at=NULL,expires_at=excluded.expires_at
+  `,[FAC_A,hash(token('owner-a')),ANIMAL_A]);
+
   let r=await json(await request('/api/session'));
   assert.equal(r.status,401,'missing token must be rejected');
 
@@ -79,6 +85,16 @@ try{
   assert.equal(r.status,200);
   assert.equal(r.body.facilityId,FAC_A);
   assert.equal(r.body.role,'manager');
+
+  r=await json(await request('/api/owner/me',{bearer:token('owner-a')}));
+  assert.equal(r.status,200);
+  assert.equal(r.body.animal.id,ANIMAL_A,'owner token must resolve only its scoped animal');
+  r=await json(await request('/api/animals',{bearer:token('owner-a')}));
+  assert.equal(r.status,403,'owner token must not access staff animal-list route');
+  r=await json(await request('/api/owner/pickup-authority-requests',{
+    method:'POST',bearer:token('owner-a'),body:{collector:'Synthetic Collector',note:'Synthetic owner request'}
+  }));
+  assert.equal(r.status,201,'scoped owner pickup-authority request should be accepted');
 
   r=await json(await request('/api/animals',{bearer:token('manager-a')}));
   assert.equal(r.status,200);
