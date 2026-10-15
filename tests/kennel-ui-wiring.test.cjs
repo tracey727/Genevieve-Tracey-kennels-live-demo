@@ -51,3 +51,13 @@ test('secure API client is loaded before authenticated adapters',()=>{
   assert.ok(api>=0);
   for(const file of adapters)assert.ok(index.indexOf('./'+file)>api,file+' loads before API client');
 });
+
+
+test('owner portal loads authenticated adapter after secure API client',()=>{
+  const owner=fs.readFileSync(base+'/owner.html','utf8');
+  assert.ok(fs.existsSync(base+'/owner-api-ui.js'));
+  assert.ok(owner.includes('./kennel-api.js'));
+  assert.ok(owner.includes('./owner-api-ui.js'));
+  assert.ok(owner.indexOf('./owner-api-ui.js')>owner.indexOf('./kennel-api.js'));
+  assert.ok(sw.includes('./owner-api-ui.js'));
+});
