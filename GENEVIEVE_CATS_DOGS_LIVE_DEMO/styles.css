@@ -75,3 +75,13 @@ button{cursor:pointer}
 .formStep .checkline{display:flex;margin:9px 0}
 #safety-command .row .btn{margin-left:6px}
 @media(max-width:760px){#safety-command .row{align-items:flex-start;flex-wrap:wrap}#safety-command .row .btn{margin:6px 6px 0 0}}
+
+/* Reused command pattern panels retain kennel styling and accessible focus states. */
+#kennel-business .card hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+#kennel-business .grid.four{grid-template-columns:repeat(auto-fit,minmax(125px,1fr))}
+#kennel-business form>.btn{margin-top:10px}
+#kennel-business .row strong{white-space:nowrap;font-size:.88rem}
+#kennel-business .card-head{align-items:flex-start;flex-wrap:wrap}
+#kennel-business .alert-box{margin-bottom:14px}
+#kennel-business button:focus-visible,#kennel-business input:focus-visible,#kennel-business select:focus-visible,#kennel-business textarea:focus-visible{outline:3px solid #a98249;outline-offset:2px}
+@media(max-width:850px){#kennel-business .grid.two,#kennel-business .grid.three{grid-template-columns:1fr}}
