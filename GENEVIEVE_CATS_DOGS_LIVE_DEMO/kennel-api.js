@@ -85,6 +85,8 @@
       kennels:()=>request('/api/kennels'),
       ownerMe:()=>request('/api/owner/me'),
       ownerPickupRequest:(body)=>request('/api/owner/pickup-authority-requests',{method:'POST',body}),
+      pickupAuthorityRequests:()=>request('/api/pickup-authority-requests'),
+      reviewPickupAuthorityRequest:(id,body)=>request('/api/pickup-authority-requests/'+encodeURIComponent(id),{method:'PATCH',body}),
       request
     };
   }
