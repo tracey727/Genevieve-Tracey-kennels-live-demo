@@ -139,33 +139,45 @@ async function route(db,request,url,auth){
     await audit(db,auth,'custody.'+b.direction,'custody_record',id,{animal_id:b.animal_id});return reply(r.rows[0],201);
   }
 
-  if(url.pathname==='/api/rounds'&&method==='GET')
-    return reply((await db.query('SELECT * FROM rounds WHERE facility_id=$1 ORDER BY due_at NULLS LAST',[f])).rows);
+  if(url.pathname==='/api/rounds'&&method==='GET'){
+    const q=auth.role==='attendant'
+      ? await db.query('SELECT * FROM rounds WHERE facility_id=$1 AND assigned_subject=$2 ORDER BY due_at NULLS LAST',[f,auth.subject])
+      : await db.query('SELECT * FROM rounds WHERE facility_id=$1 ORDER BY due_at NULLS LAST',[f]);
+    return reply(q.rows);
+  }
   const rm=url.pathname.match(/^\/api\/rounds\/([^/]+)$/);
   if(rm&&isUuid(rm[1])&&method==='PATCH'){
     need(auth,WRITE_SAFETY);const b=await bodyJson(request);
     const status=b.status;
     if(status&&!['due','in_progress','completed'].includes(status))throw Object.assign(new Error('invalid status'),{status:400});
     const progress=Number.isInteger(b.progress)?Math.max(0,Math.min(100,b.progress)):null;
-    const r=await db.query(`UPDATE rounds SET
+    const params=[status||null,progress,b.checks?JSON.stringify(b.checks):null,b.severity||null,b.note||null,rm[1],f];
+    let sql=`UPDATE rounds SET
       status=COALESCE($1,status),progress=COALESCE($2,progress),checks=COALESCE($3::jsonb,checks),severity=COALESCE($4,severity),note=COALESCE($5,note),
       completed_at=CASE WHEN $1='completed' THEN now() ELSE completed_at END,updated_at=now()
-      WHERE id=$6 AND facility_id=$7 RETURNING *`,
-      [status||null,progress,b.checks?JSON.stringify(b.checks):null,b.severity||null,b.note||null,rm[1],f]);
+      WHERE id=$6 AND facility_id=$7`;
+    if(auth.role==='attendant'){params.push(auth.subject);sql+=' AND assigned_subject=$8'}
+    const r=await db.query(sql+' RETURNING *',params);
     if(!r.rowCount)throw Object.assign(new Error('round not found'),{status:404});
     await audit(db,auth,'round.updated','round',rm[1],{status:r.rows[0].status,progress:r.rows[0].progress,severity:r.rows[0].severity});return reply(r.rows[0]);
   }
 
-  if(url.pathname==='/api/transports'&&method==='GET')
-    return reply((await db.query('SELECT * FROM transports WHERE facility_id=$1 ORDER BY due_at NULLS LAST',[f])).rows);
+  if(url.pathname==='/api/transports'&&method==='GET'){
+    const q=auth.role==='driver'
+      ? await db.query('SELECT * FROM transports WHERE facility_id=$1 AND driver_subject=$2 ORDER BY due_at NULLS LAST',[f,auth.subject])
+      : await db.query('SELECT * FROM transports WHERE facility_id=$1 ORDER BY due_at NULLS LAST',[f]);
+    return reply(q.rows);
+  }
   const trm=url.pathname.match(/^\/api\/transports\/([^/]+)$/);
   if(trm&&isUuid(trm[1])&&method==='PATCH'){
     need(auth,new Set(['manager','driver']));const b=await bodyJson(request);
     if(b.status&&!['scheduled','in_progress','completed','cancelled'].includes(b.status))throw Object.assign(new Error('invalid status'),{status:400});
-    const r=await db.query(`UPDATE transports SET status=COALESCE($1,status),temperature=COALESCE($2,temperature),checklist=COALESCE($3::jsonb,checklist),note=COALESCE($4,note),
+    const params=[b.status||null,b.temperature??null,b.checklist?JSON.stringify(b.checklist):null,b.note||null,trm[1],f];
+    let sql=`UPDATE transports SET status=COALESCE($1,status),temperature=COALESCE($2,temperature),checklist=COALESCE($3::jsonb,checklist),note=COALESCE($4,note),
       completed_at=CASE WHEN $1='completed' THEN now() ELSE completed_at END,updated_at=now()
-      WHERE id=$5 AND facility_id=$6 RETURNING *`,
-      [b.status||null,b.temperature??null,b.checklist?JSON.stringify(b.checklist):null,b.note||null,trm[1],f]);
+      WHERE id=$5 AND facility_id=$6`;
+    if(auth.role==='driver'){params.push(auth.subject);sql+=' AND driver_subject=$7'}
+    const r=await db.query(sql+' RETURNING *',params);
     if(!r.rowCount)throw Object.assign(new Error('transport not found'),{status:404});
     await audit(db,auth,'transport.updated','transport',trm[1],{status:r.rows[0].status,temperature:r.rows[0].temperature});return reply(r.rows[0]);
   }
@@ -253,7 +265,12 @@ async function route(db,request,url,auth){
   }
 
   if(url.pathname==='/api/kennels'&&method==='GET')return reply((await db.query('SELECT * FROM kennels WHERE facility_id=$1 AND active=true ORDER BY zone,name',[f])).rows);
-  if(url.pathname==='/api/tasks'&&method==='GET')return reply((await db.query('SELECT * FROM care_tasks WHERE facility_id=$1 ORDER BY due_at NULLS LAST,created_at DESC',[f])).rows);
+  if(url.pathname==='/api/tasks'&&method==='GET'){
+    const q=auth.role==='attendant'
+      ? await db.query('SELECT * FROM care_tasks WHERE facility_id=$1 AND assigned_subject=$2 ORDER BY due_at NULLS LAST,created_at DESC',[f,auth.subject])
+      : await db.query('SELECT * FROM care_tasks WHERE facility_id=$1 ORDER BY due_at NULLS LAST,created_at DESC',[f]);
+    return reply(q.rows);
+  }
   if(url.pathname==='/api/tasks'&&method==='POST'){
     need(auth,WRITE_CARE);const b=await bodyJson(request),id=crypto.randomUUID();
     if(b.animal_id!=null)await requireAnimalInFacility(db,auth,b.animal_id);
@@ -267,7 +284,10 @@ async function route(db,request,url,auth){
   if(tm&&isUuid(tm[1])&&method==='PATCH'){
     need(auth,WRITE_CARE);const b=await bodyJson(request), status=b.status;
     if(!['open','in_progress','completed','cancelled'].includes(status))throw Object.assign(new Error('invalid status'),{status:400});
-    const r=await db.query('UPDATE care_tasks SET status=$1,completed_at=CASE WHEN $1=\'completed\' THEN now() ELSE completed_at END,updated_at=now() WHERE id=$2 AND facility_id=$3 RETURNING *',[status,tm[1],f]);
+    const params=[status,tm[1],f];
+    let sql='UPDATE care_tasks SET status=$1,completed_at=CASE WHEN $1=\'completed\' THEN now() ELSE completed_at END,updated_at=now() WHERE id=$2 AND facility_id=$3';
+    if(auth.role==='attendant'){params.push(auth.subject);sql+=' AND assigned_subject=$4'}
+    const r=await db.query(sql+' RETURNING *',params);
     if(!r.rowCount)throw Object.assign(new Error('task not found'),{status:404});
     await audit(db,auth,'task.status','care_task',tm[1],{status});return reply(r.rows[0])
   }
