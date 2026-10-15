@@ -44,7 +44,7 @@ Animal passports (species-specific allergy/diet/medication/behaviour), care task
 Source files:
 - \`GENEVIEVE_CATS_DOGS_LIVE_DEMO/kennel-continuity.js\`: pure source-independent rules, no live data integrations.
 - \`GENEVIEVE_CATS_DOGS_LIVE_DEMO/kennel-continuity-ui.js\`: care continuity manager view using the existing synthetic browser store.
-- \`tests/kennel-continuity.test.cjs\`: ten regression tests enforcing no credential self-attestation, current training evidence, plan review dates, exact pickup matches, no premature care ownership transfer and overdue owner follow-ups.
+- \`tests/kennel-continuity.test.cjs\`: eleven regression tests enforcing no credential self-attestation, current training evidence, plan review dates, exact pickup matches, no premature care ownership transfer and overdue owner follow-ups.
 - \`GENEVIEVE_CATS_DOGS_LIVE_DEMO/index.html\`: new **Care Continuity & Staff Readiness** screen and Business Hub navigation shortcut.
 
 Functions added:
@@ -52,7 +52,7 @@ Functions added:
 2. **Independent training readiness evidence** per kennel role (animal handling, welfare, emergencies, staff handover, transport, collection). Missing or lapsed → HOLD; no staff ranking or automatic qualification decisions.
 3. **Pickup preflight** requires an exact authorised contact name (not substring), factual ID and authority checks, condition and manager review. The tool **cannot authorise actual release** or save a collector identity.
 4. **Propose care-task cover** to an active named receiver, with independent manager review. Prior owner never disappears from the existing care task; acceptance only creates demo evidence, NOT a live owner change. Final server transaction and authenticated receiver attestation remain future work.
-5. **Owner callback queue** with named staff, due times, visible overdue and incomplete items. No real owner messaging or data transfer.
+5. **Owner callback queue** with named staff, due times, visible overdue and incomplete items. A separate completed-response evidence and manager review gate is required before closure; an attempted response remains open. No real owner messaging or data transfer.
 
 ## HOLD / next work before real use
 - Only browser localStorage and same-device demo state exist for new workflows; real authentication, manager role proof, role-specific competency policy and independent attestation require a tenant-scoped backend.
