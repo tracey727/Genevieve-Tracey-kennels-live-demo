@@ -60,3 +60,19 @@ test('animal methods stay on authenticated same-origin API routes',async()=>{
   assert.equal(seen[1].opts.method,'POST');
   assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic');
 });
+
+
+test('booking methods use authenticated facility API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/bookings'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/bookings'&&opts.method==='POST')return response(201,{id:'b1',status:'due'});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.bookings(),[]);
+  const made=await api.createBooking({animal_id:'a1',booking_type:'drop_off',due_at:'2026-10-16T00:00:00.000Z'});
+  assert.equal(made.id,'b1');
+  assert.equal(seen[1].opts.method,'POST');
+  assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic');
+});
