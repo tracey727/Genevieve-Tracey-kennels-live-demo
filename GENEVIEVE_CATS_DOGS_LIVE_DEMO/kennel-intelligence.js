@@ -120,6 +120,39 @@
           'Room/facility inspection required',room.name+': '+(room.gate||'status requires verification'), 'none',null,'Manager to assign a repair/inspection and record evidence of closure.'));
       }
     }
+    // Reuse TIME SAVER, Revenue Rescue and animal-care continuity patterns without
+    // equating missed capacity to earned money or making a veterinary decision.
+    const tasks=Array.isArray(state?.tasks)?state.tasks:[];
+    for(const task of tasks){
+      if(!task||!task.id||['Completed','Cancelled','completed','cancelled'].includes(task.status))continue;
+      const due=Date.parse(task.due);
+      if(!Number.isFinite(due)||!Number.isFinite(Date.parse(now)))continue;
+      if(due<Date.parse(now)){
+        const high=String(task.type||'').toLowerCase().includes('medication')||task.severity==='red';
+        out.push(find('KEN-CARE:'+task.id,'KEN-CARE',high?'RED':'AMBER',
+          high?'Overdue priority care task':'Overdue care task',
+          String(task.type||'Care task')+' requires the assigned staff and manager to check actual completion and escalate appropriately.',
+          'none',null,'Verify the animal and record actual care; do not infer a missed dose or prescribe a corrective dose.'));
+      }
+    }
+    const transports=Array.isArray(state?.transports)?state.transports:[];
+    for(const tr of transports){
+      if(!tr||!tr.id||['Completed','Cancelled','completed','cancelled'].includes(tr.status))continue;
+      if(Number.isFinite(Date.parse(tr.due))&&Date.parse(tr.due)<Date.parse(now)){
+        out.push(find('KEN-TRANSPORT:'+tr.id,'KEN-TRANSPORT','AMBER',
+          'Transport handover needs review',
+          'Scheduled transport '+tr.id+' is past due without a recorded completion.','none',null,
+          'Contact responsible driver and confirm animal welfare and authorised receipt.'));
+      }
+    }
+    const bookings=Array.isArray(state?.bookings)?state.bookings:[];
+    for(const book of bookings){
+      if(!book||!book.id||!['cancelled','no-show','Cancelled','No-show'].includes(book.status))continue;
+      out.push(find('KEN-CAPACITY:'+book.id,'KEN-CAPACITY','AMBER',
+        'Cancelled or unused boarding slot',
+        'Booking '+book.id+' needs review for safe capacity reuse. No earned revenue amount is assumed.',
+        'none',null,'Review consent, actual cancellation terms, waitlist and safe placement; do not bill automatically.'));
+    }
     const staff=Array.isArray(state?.staff)?state.staff.filter(x=>x.onShift):[];
     if(!staff.some(x=>x.role==='Manager'||x.role==='Senior Attendant')){
       out.push(find('KEN-COVERAGE:SUPERVISOR','KEN-COVERAGE','RED','No recorded supervising cover','Confirm a competent responsible manager or delegate is available.'));
