@@ -79,3 +79,14 @@ test('AUD formatting and amount bounds',()=>{
  assert.equal(K.cents(12.3),null);
  assert.equal(K.cents(100),100);
 });
+test('overdue animal-care, transport and cancelled slots are visible without invented money',()=>{
+ const s=base();
+ s.tasks=[{id:'task-1',type:'Medication',due:'2026-10-14T08:00:00Z',status:'Open',severity:'amber'}];
+ s.transports=[{id:'move-1',due:'2026-10-14T09:00:00Z',status:'Scheduled'}];
+ s.bookings=[{id:'cancel-1',status:'Cancelled',type:'Drop-off'}];
+ const a=K.assess(s,TODAY+'T08:00:00Z');
+ assert(a.findings.some(x=>x.id==='KEN-CARE:task-1'&&x.state==='RED'));
+ assert(a.findings.some(x=>x.id==='KEN-TRANSPORT:move-1'&&x.state==='AMBER'));
+ assert(a.findings.some(x=>x.id==='KEN-CAPACITY:cancel-1'&&x.amountCents===null));
+ assert.equal(a.unbilledCents+a.outstandingCents,0);
+});
