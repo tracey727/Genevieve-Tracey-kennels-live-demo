@@ -61,3 +61,13 @@ test('owner portal loads authenticated adapter after secure API client',()=>{
   assert.ok(owner.indexOf('./owner-api-ui.js')>owner.indexOf('./kennel-api.js'));
   assert.ok(sw.includes('./owner-api-ui.js'));
 });
+
+
+test('employee app loads authenticated adapter after secure API client',()=>{
+  const employee=fs.readFileSync(base+'/employee.html','utf8');
+  assert.ok(fs.existsSync(base+'/employee-api-ui.js'));
+  assert.ok(employee.includes('./kennel-api.js'));
+  assert.ok(employee.includes('./employee-api-ui.js'));
+  assert.ok(employee.indexOf('./employee-api-ui.js')>employee.indexOf('./kennel-api.js'));
+  assert.ok(sw.includes('./employee-api-ui.js'));
+});
