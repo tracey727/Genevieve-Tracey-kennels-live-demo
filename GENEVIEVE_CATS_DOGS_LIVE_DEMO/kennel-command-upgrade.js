@@ -71,7 +71,7 @@
     const overview=$('kennelOverview');
     if(overview)overview.innerHTML=
       '<div class="grid four"><div class="stat"><small>RED — urgent</small><b>'+a.red+'</b></div><div class="stat"><small>AMBER — action</small><b>'+a.amber+'</b></div><div class="stat"><small>HOLD — verify</small><b>'+a.hold+'</b></div><div class="stat"><small>Unaccepted handovers</small><b>'+h.handovers.filter(x=>x.status!=='accepted').length+'</b></div></div>'+
-      '<p class="small"><b>Single kennel manager view:</b> animal welfare, inventory, finance, site upkeep and staff cover remain separated by their own evidence. No combined fictional “savings total”.</p>';
+      '<div class="alert-box"><b>WEATHER FEED HOLD — NOT CONNECTED</b><p>See Weather & Hazard Safety for fictional exercises and kennel precautions. No actual BOM, Nature Has No Borders or emergency alert has been received.</p><button type="button" class="btn sm secondary" data-screen-link="kennel-weather">Open weather readiness</button></div>'+'<p class="small"><b>Single kennel manager view:</b> animal welfare, inventory, finance, site upkeep and staff cover remain separated by their own evidence. No combined fictional “savings total”.</p>';
     const selectAnimals=options(s.animals), selectStaff=options(s.staff);
     for(const [element,values] of [
       ['kennelServiceAnimal',selectAnimals],['kennelHandoverFrom',selectStaff],['kennelHandoverTo',selectStaff],
