@@ -67,3 +67,16 @@ test('invalid dates never become evidence',()=>{
  assert.equal(C.validDate('2026-02-30'),false);
  assert.equal(C.validDate('2026-10-15'),true);
 });
+
+test('owner callback stays open without actual response and independent signoff',()=>{
+ const rec={id:'cb1',animalId:'a1',assignedTo:'s1',state:'OPEN'};
+ const params={completedBy:'s1',managerReviewedBy:'m1',outcomeNote:'Contacted fictional owner',contactActuallyCompleted:false};
+ assert.equal(C.closeFollowup(rec,params,at).valid,false);
+ assert.equal(rec.state,'OPEN');
+ assert.equal(C.closeFollowup(rec,{...params,contactActuallyCompleted:true,managerReviewedBy:'s1'},at).valid,false);
+ assert.equal(C.closeFollowup(rec,{...params,contactActuallyCompleted:true,completedBy:'s2'},at).valid,false);
+ const ok=C.closeFollowup(rec,{...params,contactActuallyCompleted:true},at);
+ assert.equal(ok.valid,true);
+ assert.equal(ok.closure.state,'CLOSED');
+ assert.equal(rec.state,'OPEN'); // pure rule never mutates source itself
+});
