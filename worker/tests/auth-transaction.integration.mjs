@@ -148,6 +148,7 @@ try{
     body:{animal_id:ANIMAL_A,direction:'pick_up',condition_note:'Synthetic pickup',identity_status:'Verified',collector:'Synthetic Collector'}
   }));
   assert.equal(r.status,201,'approved collector with verified identity should permit audited pickup');
+  assert.equal(r.body.staff_subject,'manager.a','server must record authenticated custody operator');
   const pickupBooking=await db.query('SELECT status FROM bookings WHERE id=$1',[pickupBookingId]);
   assert.equal(pickupBooking.rows[0].status,'completed','pickup must complete matching booking');
   r=await json(await request('/api/custody',{
@@ -155,7 +156,6 @@ try{
     body:{animal_id:ANIMAL_A,direction:'pick_up',condition_note:'Duplicate pickup',identity_status:'Verified',collector:'Synthetic Collector'}
   }));
   assert.equal(r.status,409,'duplicate release must be denied');
-  assert.equal(r.body.staff_subject,'manager.a','server must record authenticated custody operator');
 
 
   r=await json(await request('/api/animals',{bearer:token('manager-a')}));
