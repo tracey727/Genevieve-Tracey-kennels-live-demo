@@ -32,9 +32,10 @@ Support staff doing the work. Reuse **applicable product patterns**, not custome
 - Expired stock RED, low stock AMBER, approaching expiry AMBER, demand vs supplier lead-time AMBER. Forecast only uses manually verified positive rates; human approval is required for purchasing.
 - Offered handovers with named sender/receiver and due time remain open until accepted in demo; overdue unaccepted items RED. No claim of live worker identity.
 - Existing staff breaks/workforce Safety Command is linked instead of building a second break engine; no productivity ranking.
+- Existing overdue animal-care tasks, delayed transport custody and cancelled/unused bookings appear in the manager exceptions; unused capacity is **not assigned a fictitious revenue figure**.
 - One management exception list with room, financial, stock, handover and supervision indicators. A manager can assign a review note, but cannot artificially close a finding without fixing underlying evidence.
 - Offline demo assets included in the service worker's bumped cache; state remains in the same browser storage.
-- Pure rules covered by ten Node regression tests. CI now runs the test suite and verifies that the screens and scripts are present.
+- Pure rules covered by eleven Node regression tests. CI now runs the test suite and verifies that the screens and scripts are present.
 
 ## Safety and acceptance
 The polished four-view browser demonstration is **not** a secure production application. It uses localStorage, supports tab syncing only on the same device, and has no authenticated manager role for these forms. It must not contain real animal-owner, employment, financial or veterinarian records. Do not use its labels as statutory or veterinary compliance certification.
