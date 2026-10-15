@@ -214,3 +214,17 @@ test('kennel-room method uses authenticated API route',async()=>{
   assert.deepEqual(await api.kennels(),[]);
   assert.equal(seen[0].opts.headers.authorization,'Bearer synthetic');
 });
+
+
+test('owner-scoped portal methods use authenticated owner routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic-owner');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/owner/me')return response(200,{animal:{id:'a1'},updates:[]});
+    if(path==='/api/owner/pickup-authority-requests'&&opts.method==='POST')return response(201,{id:'p1',status:'pending'});
+    return response(404,{error:'not found'});
+  }});
+  assert.equal((await api.ownerMe()).animal.id,'a1');
+  assert.equal((await api.ownerPickupRequest({collector:'Synthetic Collector'})).id,'p1');
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic-owner'));
+});
