@@ -9,6 +9,7 @@ const env={HYPERDRIVE:{connectionString:DB}};
 
 const FAC_A='11111111-1111-4111-8111-111111111111';
 const FAC_B='22222222-2222-4222-8222-222222222222';
+const ANIMAL_A='31111111-1111-4111-8111-111111111111';
 const ANIMAL_B='32222222-2222-4222-8222-222222222222';
 const token=(s)=>'synthetic-'+s+'-only';
 const hash=(v)=>createHash('sha256').update(v).digest('hex');
@@ -43,10 +44,21 @@ try{
     ON CONFLICT(facility_id,subject) DO UPDATE SET active=true
   `,[FAC_B]);
 
+  await db.query(`
+    INSERT INTO staff_members(id,facility_id,subject,name,role,on_shift,first_aid,animal_first_aid,active)
+    VALUES
+      ('aa211111-1111-4111-8111-111111111111',$1,'manager.a','Manager A','manager',true,true,true,true),
+      ('aa211111-1111-4111-8111-111111111112',$1,'attendant.a','Attendant A','attendant',true,true,true,true),
+      ('aa211111-1111-4111-8111-111111111113',$1,'driver.a','Driver A','driver',true,true,true,true),
+      ('aa211111-1111-4111-8111-111111111114',$1,'driver.other','Other Driver','driver',true,true,true,true)
+    ON CONFLICT(facility_id,subject) DO UPDATE SET active=true
+  `,[FAC_A]);
+
   const identities=[
     ['aa111111-1111-4111-8111-111111111111',FAC_A,'manager.a','Manager A','manager',token('manager-a')],
     ['aa111111-1111-4111-8111-111111111112',FAC_A,'attendant.a','Attendant A','attendant',token('attendant-a')],
     ['aa111111-1111-4111-8111-111111111113',FAC_A,'auditor.a','Auditor A','auditor',token('auditor-a')],
+    ['aa111111-1111-4111-8111-111111111114',FAC_A,'driver.a','Driver A','driver',token('driver-a')],
     ['bb222222-2222-4222-8222-222222222221',FAC_B,'manager.b','Manager B','manager',token('manager-b')]
   ];
   for(const [id,facility,subject,display,role,raw] of identities){
@@ -103,6 +115,54 @@ try{
     body:{item:'Synthetic audit-only item',status:'current'}
   }));
   assert.equal(r.status,403,'auditor must remain read-only');
+
+  await db.query(`
+    INSERT INTO care_tasks(id,facility_id,animal_id,type,detail,status,severity,assigned_subject)
+    VALUES
+      ('ab111111-1111-4111-8111-111111111111',$1,$2,'Synthetic own task','own','open','green','attendant.a'),
+      ('ab111111-1111-4111-8111-111111111112',$1,$2,'Synthetic other task','other','open','green','manager.a')
+    ON CONFLICT(id) DO NOTHING
+  `,[FAC_A,ANIMAL_A]);
+  r=await json(await request('/api/tasks',{bearer:token('attendant-a')}));
+  assert.equal(r.status,200);
+  assert.ok(r.body.length>=1);
+  assert.ok(r.body.every(x=>x.assigned_subject==='attendant.a'),'attendant saw a task assigned to another staff member');
+  r=await json(await request('/api/tasks/ab111111-1111-4111-8111-111111111112',{
+    method:'PATCH',bearer:token('attendant-a'),body:{status:'completed'}
+  }));
+  assert.equal(r.status,404,'attendant must not update another staff member\'s task');
+
+  await db.query(`
+    INSERT INTO rounds(id,facility_id,zone,species,status,progress,assigned_subject,checks,severity)
+    VALUES
+      ('ac111111-1111-4111-8111-111111111111',$1,'Synthetic Own Round','Dog','due',0,'attendant.a','{}'::jsonb,'green'),
+      ('ac111111-1111-4111-8111-111111111112',$1,'Synthetic Other Round','Dog','due',0,'manager.a','{}'::jsonb,'green')
+    ON CONFLICT(id) DO NOTHING
+  `,[FAC_A]);
+  r=await json(await request('/api/rounds',{bearer:token('attendant-a')}));
+  assert.equal(r.status,200);
+  assert.ok(r.body.length>=1);
+  assert.ok(r.body.every(x=>x.assigned_subject==='attendant.a'),'attendant saw a round assigned to another staff member');
+  r=await json(await request('/api/rounds/ac111111-1111-4111-8111-111111111112',{
+    method:'PATCH',bearer:token('attendant-a'),body:{status:'in_progress',progress:10}
+  }));
+  assert.equal(r.status,404,'attendant must not update another staff member\'s round');
+
+  await db.query(`
+    INSERT INTO transports(id,facility_id,animal_id,direction,driver_subject,status,checklist)
+    VALUES
+      ('ad111111-1111-4111-8111-111111111111',$1,$2,'Synthetic own transport','driver.a','scheduled','{}'::jsonb),
+      ('ad111111-1111-4111-8111-111111111112',$1,$2,'Synthetic other transport','driver.other','scheduled','{}'::jsonb)
+    ON CONFLICT(id) DO NOTHING
+  `,[FAC_A,ANIMAL_A]);
+  r=await json(await request('/api/transports',{bearer:token('driver-a')}));
+  assert.equal(r.status,200);
+  assert.ok(r.body.length>=1);
+  assert.ok(r.body.every(x=>x.driver_subject==='driver.a'),'driver saw a transport assigned to another driver');
+  r=await json(await request('/api/transports/ad111111-1111-4111-8111-111111111112',{
+    method:'PATCH',bearer:token('driver-a'),body:{status:'in_progress',temperature:22}
+  }));
+  assert.equal(r.status,404,'driver must not update another driver\'s transport');
 
   const successName='Atomic Success '+Date.now();
   r=await json(await request('/api/animals',{
