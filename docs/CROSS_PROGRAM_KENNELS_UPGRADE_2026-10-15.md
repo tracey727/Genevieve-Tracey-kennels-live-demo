@@ -51,3 +51,24 @@ No new Neon table, Worker endpoint, API token, integration credential, real invo
 6. Review data minimisation, retention, independent backups, incident response, local council, animal welfare, WHS, veterinary and insurance requirements before a real paying subscription.
 
 **No cross-product live bridge is authorised here.** A future Ecosystem Control Centre health entry may carry only minimum necessary status, version, test evidence and route reference — not animal, owner, staff or finance details.
+
+
+## Pet Relocation & Travel Budget (requested addition — 15 October 2026)
+
+**Traveller Budget / Wayfarer source reviewed:** \`tracey727/travellers-budget\` has trip budgets, configurable expense categories, cross-currency expense entries and budget-versus-actual views, but not a kennel-specific animal handover workflow. **VIP Pet Travel** \`tracey727/genevieve-vip-pet-travel\` has a separate mobile/edge/database architecture, not an authorised data bridge. Existing Kennels driver screens already support vehicle/crate checks, pickup/delivery and custody handover.
+
+**Now implemented in the same synthetic kennel UI and demo store:**
+- Dedicated **Pet Relocation & Travel Budget** navigation/screen for kennel staff transporting dogs/cats to new homes, foster carers and approved receiving organisations.
+- Trip records (animal, assigned staff member, origin/destination area labels, target arrival, approved AUD budget), with optional reference to an existing kennel transport job. Linking the reference does not rewrite a driver job.
+- Separate verified/held expense records (fuel, tolls, accommodation, driver travel, animal food/water, equipment, veterinary contingency, other); spend and remaining budget. Unverified expenses cannot silently enter the verified total.
+- Stop and arrival milestones entered manually. No GPS, map distance, dynamic ETA, route optimisation, automatic dispatch or fabricated travel metrics.
+- Human-recorded safety checklist: correct animal/authorisation, containment/vehicle condition, food/water/rest needs, animal arrival condition, receiver identity/authority and explicit custody handover.
+- State progression \`PLANNED\` → \`IN_TRANSIT\` → \`ARRIVED\` → \`COMPLETED\`; progression requires corresponding checks and arrival milestone. A completed trip without all safety evidence remains HOLD in the pure rules engine.
+- Overdue and unaccepted receiving-home handover escalates; over-budget expenses are flagged but no amount is described as recovered revenue.
+- Ten additional Node regression tests added to GitHub CI.
+
+**Boundary:** This is an independently designed kennel module borrowing only the relevant travel budgeting and pet transport patterns. It **does not connect to Traveller Budget, Wayfarer, VIP Pet Travel or Revenue Rescue databases**, and it creates no real customer expense, finance, GPS, animal medical record, legal permit or authenticated receipt. The browser demo cannot establish real identity, professional safety compliance or physical delivery.
+
+**Commercial packaging:** Include standard manually entered and evidenced relocation/travel-budget planning in the proposed **A$249 per-location monthly Kennels Complete subscription** when production-ready, without a separate GENEVIEVE software subscription. Actual transport expenses, paid delivery services, third-party mapping, additional vehicles and specialised multi-location fleet functions are separate operating costs or potential optional commercial features; no charges or automatic carrier fee deductions are implemented.
+
+**Release gates before real transfers:** kennel-only encrypted and tenant-scoped travel/expense database; real staff roles and verified receiving-person permissions; accepted custody with durable audit/consent; incident/escalation; backup and retention; driver hours/fatigue; welfare, council/state/interstate transport, rescue/adoption authority, insurance and veterinary advice as applicable; tested offline/reconnect and multi-user handover. No automatic real-world transport decisions.
