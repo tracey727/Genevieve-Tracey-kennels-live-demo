@@ -337,7 +337,7 @@ export default {
     const url=new URL(request.url), method=request.method.toUpperCase();
     try{
       if(url.pathname==='/api/health'&&method==='GET'){
-        return withDb(env,async db=>{
+        return await withDb(env,async db=>{
           const r=await db.query("SELECT current_database() AS database,current_user AS role,now() AS server_time,to_regclass('public.facilities') IS NOT NULL AS facilities_ready,to_regclass('public.access_tokens') IS NOT NULL AS tokens_ready,to_regclass('public.animals') IS NOT NULL AS animals_ready,to_regclass('public.audit_events') IS NOT NULL AS audit_ready");
           const state=r.rows[0];
           const schemaReady=state.facilities_ready&&state.tokens_ready&&state.animals_ready&&state.audit_ready;
@@ -349,7 +349,7 @@ export default {
         if(env.ASSETS)return env.ASSETS.fetch(request);
         return new Response('Not found',{status:404})
       }
-      return withDb(env,async db=>{
+      return await withDb(env,async db=>{
         // Read requests remain read-only. Every authenticated mutation and its
         // audit record commit together, or neither is persisted.
         const isMutation=!['GET','HEAD','OPTIONS'].includes(method);
