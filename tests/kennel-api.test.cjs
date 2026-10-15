@@ -159,3 +159,17 @@ test('incident and audit methods use authenticated API routes',async()=>{
   assert.deepEqual(await api.audit(),[]);
   assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
 });
+
+
+test('compliance methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/compliance'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/compliance'&&opts.method==='POST')return response(200,{id:'c1',status:'current'});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.compliance(),[]);
+  assert.equal((await api.saveCompliance({item:'Synthetic',status:'current'})).id,'c1');
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
+});
