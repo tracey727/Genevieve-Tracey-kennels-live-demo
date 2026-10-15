@@ -187,3 +187,18 @@ test('dashboard and alert methods use authenticated API routes',async()=>{
   assert.deepEqual(await api.alerts(),[]);
   assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
 });
+
+
+test('emergency methods use authenticated API and explicit human actions',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/emergency'&&opts.method==='GET')return response(200,{active:false,checks:{}});
+    if(path==='/api/emergency'&&opts.method==='POST')return response(200,{active:true,type:'Synthetic drill'});
+    return response(404,{error:'not found'});
+  }});
+  assert.equal((await api.emergency()).active,false);
+  assert.equal((await api.emergencyAction({action:'activate',type:'Synthetic drill'})).active,true);
+  assert.equal(JSON.parse(seen[1].opts.body).action,'activate');
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
+});
