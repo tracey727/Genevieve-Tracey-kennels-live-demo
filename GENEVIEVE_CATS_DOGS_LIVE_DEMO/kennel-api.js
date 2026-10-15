@@ -67,6 +67,10 @@
       stock:()=>request('/api/stock'),
       createStock:(body)=>request('/api/stock',{method:'POST',body}),
       updateStock:(id,body)=>request('/api/stock/'+encodeURIComponent(id),{method:'PATCH',body}),
+      rounds:()=>request('/api/rounds'),
+      updateRound:(id,body)=>request('/api/rounds/'+encodeURIComponent(id),{method:'PATCH',body}),
+      transports:()=>request('/api/transports'),
+      updateTransport:(id,body)=>request('/api/transports/'+encodeURIComponent(id),{method:'PATCH',body}),
       request
     };
   }
