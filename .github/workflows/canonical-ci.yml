@@ -28,6 +28,9 @@ jobs:
             node --check "$file"
           done
 
+      - name: Cross-program intelligence regression
+        run: node --test tests/kennel-intelligence.test.cjs
+
       - name: Canonical integrity validation
         run: python3 scripts/validate_build.py
 
