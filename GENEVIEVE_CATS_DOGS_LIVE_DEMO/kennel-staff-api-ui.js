@@ -32,7 +32,7 @@
   }
   function init(){
     if(!window.KennelAPI)return;
-    client=window.KennelAPI.create();
+    client=window.KennelAPI.sharedClient();
     const section=document.getElementById('staff');
     if(!section)return;
     panel=document.createElement('div');
