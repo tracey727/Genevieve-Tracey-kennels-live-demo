@@ -94,3 +94,8 @@ button{cursor:pointer}
 #kennel-relocation summary{cursor:pointer}
 #kennel-relocation button:focus-visible,#kennel-relocation input:focus-visible,#kennel-relocation select:focus-visible,#kennel-relocation textarea:focus-visible{outline:3px solid #a98249;outline-offset:2px}
 @media(max-width:850px){#kennel-relocation .grid.two,#kennel-relocation .grid.three{grid-template-columns:1fr}}
+
+#kennel-continuity .grid.four{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+#kennel-continuity form>.btn{margin-top:11px}
+#kennel-continuity .row{align-items:flex-start}
+@media(max-width:850px){#kennel-continuity .grid.two{grid-template-columns:1fr}}
