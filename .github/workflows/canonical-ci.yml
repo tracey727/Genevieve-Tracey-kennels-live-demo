@@ -28,8 +28,34 @@ jobs:
             node --check "$file"
           done
 
+      - name: Authenticated browser API client regression
+        run: node --test tests/kennel-api.test.cjs
+
+      - name: Authenticated UI wiring regression
+        run: node --test tests/kennel-ui-wiring.test.cjs
+
+      - name: Cross-program intelligence regression
+        run: node --test tests/kennel-intelligence.test.cjs
+
+      - name: Pet relocation and travel budget regression
+        run: node --test tests/kennel-relocation.test.cjs
+
+      - name: Weather alert source and animal safety regression
+        run: node --test tests/kennel-weather.test.cjs
+
+      - name: Care continuity, safeguarding and staff readiness regression
+        run: node --test tests/kennel-continuity.test.cjs
+
       - name: Canonical integrity validation
         run: python3 scripts/validate_build.py
+
+      - name: Install Worker bundle dependencies
+        working-directory: worker
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Cloudflare Worker dry-run bundle
+        working-directory: worker
+        run: npx wrangler deploy src/index.js --dry-run --outdir .wrangler-dry-run --name genevieve-kennels-command-centre-synthetic --compatibility-date 2026-10-15 --compatibility-flags nodejs_compat --var APP_ENV:synthetic
 
   database:
     runs-on: ubuntu-latest

@@ -48,6 +48,13 @@ async function requireAnimalInFacility(db,auth,animalId){
   const r=await db.query('SELECT 1 FROM animals WHERE id=$1 AND facility_id=$2 AND active=true',[animalId,auth.facility_id]);
   if(!r.rowCount)throw Object.assign(new Error('animal not found'),{status:404});
 }
+async function requireStaffSubjectInFacility(db,auth,subject){
+  const value=String(subject||'').trim();
+  if(!value)throw Object.assign(new Error('valid assigned staff required'),{status:400});
+  const r=await db.query('SELECT 1 FROM staff_members WHERE facility_id=$1 AND subject=$2 AND active=true',[auth.facility_id,value]);
+  if(!r.rowCount)throw Object.assign(new Error('assigned staff not found'),{status:404});
+  return value;
+}
 async function audit(db,auth,eventType,entityType=null,entityId=null,detail={}){
   await db.query(`INSERT INTO audit_events(facility_id,actor_token_id,actor_subject,actor_role,event_type,entity_type,entity_id,detail)
                   VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`,
@@ -83,7 +90,8 @@ async function route(db,request,url,auth){
     const animal=(await db.query('SELECT id,species,name,breed,vaccination_status,diet,medication_plan,behaviour_notes FROM animals WHERE id=$1 AND facility_id=$2 AND active=true',[auth.animal_id,f])).rows[0];
     if(!animal)throw Object.assign(new Error('animal not found'),{status:404});
     const updates=(await db.query('SELECT id,message,created_at FROM owner_updates WHERE facility_id=$1 AND animal_id=$2 ORDER BY created_at DESC LIMIT 100',[f,auth.animal_id])).rows;
-    return reply({animal,updates});
+    const pickup_requests=(await db.query('SELECT id,collector,note,status,created_at,reviewed_at FROM pickup_authority_requests WHERE facility_id=$1 AND animal_id=$2 ORDER BY created_at DESC LIMIT 50',[f,auth.animal_id])).rows;
+    return reply({animal,updates,pickup_requests});
   }
   if(url.pathname==='/api/owner/pickup-authority-requests'&&method==='POST'){
     if(auth.role!=='owner'||!auth.animal_id)throw Object.assign(new Error('forbidden'),{status:403});
@@ -125,40 +133,78 @@ async function route(db,request,url,auth){
     need(auth,WRITE_OPERATIONS);const b=await bodyJson(request),id=crypto.randomUUID();
     if(!isUuid(b.animal_id)||!['drop_off','pick_up'].includes(b.direction)||!String(b.condition_note||'').trim())throw Object.assign(new Error('animal_id, direction and condition_note are required'),{status:400});
     await requireAnimalInFacility(db,auth,b.animal_id);
+    if(b.direction==='drop_off'&&!['Confirmed','Verified'].includes(String(b.identity_status||'')))throw Object.assign(new Error('verified drop-off identity required'),{status:400});
+    if(b.direction==='pick_up'){
+      if(String(b.identity_status||'')!=='Verified')throw Object.assign(new Error('verified collector identity required'),{status:400});
+      const approved=await db.query(
+        "SELECT 1 FROM pickup_authority_requests WHERE facility_id=$1 AND animal_id=$2 AND status='approved' AND lower(collector)=lower($3) LIMIT 1",
+        [f,b.animal_id,String(b.collector||'').trim()]
+      );
+      if(!approved.rowCount)throw Object.assign(new Error('approved pickup authority required'),{status:403});
+    }
+    await db.query('SELECT pg_advisory_xact_lock(hashtext($1),hashtext($2))',[f,b.animal_id]);
+    const latest=await db.query(
+      "SELECT direction FROM custody_records WHERE facility_id=$1 AND animal_id=$2 ORDER BY occurred_at DESC,id DESC LIMIT 1",
+      [f,b.animal_id]
+    );
+    if(b.direction==='pick_up'&&(!latest.rowCount||latest.rows[0].direction!=='drop_off'))
+      throw Object.assign(new Error('animal is not currently checked in; pickup denied'),{status:409});
+    if(b.direction==='drop_off'&&latest.rowCount&&latest.rows[0].direction==='drop_off')
+      throw Object.assign(new Error('animal already checked in; duplicate drop-off denied'),{status:409});
+    const dueBooking=await db.query(
+      "SELECT id FROM bookings WHERE facility_id=$1 AND animal_id=$2 AND booking_type=$3 AND status='due' ORDER BY due_at,id LIMIT 1 FOR UPDATE",
+      [f,b.animal_id,b.direction]
+    );
+    if(!dueBooking.rowCount)throw Object.assign(new Error('matching due booking required before custody handover'),{status:409});
     const r=await db.query(`INSERT INTO custody_records(id,facility_id,animal_id,direction,staff_subject,identity_status,authority_detail,vaccination_status,medication_detail,belongings,condition_note)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [id,f,b.animal_id,b.direction,auth.subject,b.identity_status||null,b.authority_detail||null,b.vaccination_status||null,b.medication_detail||null,b.belongings||null,b.condition_note]);
+    await db.query("UPDATE bookings SET status='completed',updated_at=now() WHERE id=$1 AND facility_id=$2",[dueBooking.rows[0].id,f]);
     await db.query('UPDATE animals SET updated_at=now() WHERE id=$1 AND facility_id=$2',[b.animal_id,f]);
-    await audit(db,auth,'custody.'+b.direction,'custody_record',id,{animal_id:b.animal_id});return reply(r.rows[0],201);
+    await audit(db,auth,'custody.'+b.direction,'custody_record',id,{animal_id:b.animal_id,booking_id:dueBooking.rows[0].id});
+    await audit(db,auth,'booking.status','booking',dueBooking.rows[0].id,{status:'completed',custody_id:id});
+    return reply(r.rows[0],201);
   }
 
-  if(url.pathname==='/api/rounds'&&method==='GET')
-    return reply((await db.query('SELECT * FROM rounds WHERE facility_id=$1 ORDER BY due_at NULLS LAST',[f])).rows);
+  if(url.pathname==='/api/rounds'&&method==='GET'){
+    const q=auth.role==='attendant'
+      ? await db.query('SELECT * FROM rounds WHERE facility_id=$1 AND assigned_subject=$2 ORDER BY due_at NULLS LAST',[f,auth.subject])
+      : await db.query('SELECT * FROM rounds WHERE facility_id=$1 ORDER BY due_at NULLS LAST',[f]);
+    return reply(q.rows);
+  }
   const rm=url.pathname.match(/^\/api\/rounds\/([^/]+)$/);
   if(rm&&isUuid(rm[1])&&method==='PATCH'){
     need(auth,WRITE_SAFETY);const b=await bodyJson(request);
     const status=b.status;
     if(status&&!['due','in_progress','completed'].includes(status))throw Object.assign(new Error('invalid status'),{status:400});
     const progress=Number.isInteger(b.progress)?Math.max(0,Math.min(100,b.progress)):null;
-    const r=await db.query(`UPDATE rounds SET
+    const params=[status||null,progress,b.checks?JSON.stringify(b.checks):null,b.severity||null,b.note||null,rm[1],f];
+    let sql=`UPDATE rounds SET
       status=COALESCE($1,status),progress=COALESCE($2,progress),checks=COALESCE($3::jsonb,checks),severity=COALESCE($4,severity),note=COALESCE($5,note),
       completed_at=CASE WHEN $1='completed' THEN now() ELSE completed_at END,updated_at=now()
-      WHERE id=$6 AND facility_id=$7 RETURNING *`,
-      [status||null,progress,b.checks?JSON.stringify(b.checks):null,b.severity||null,b.note||null,rm[1],f]);
+      WHERE id=$6 AND facility_id=$7`;
+    if(auth.role==='attendant'){params.push(auth.subject);sql+=' AND assigned_subject=$8'}
+    const r=await db.query(sql+' RETURNING *',params);
     if(!r.rowCount)throw Object.assign(new Error('round not found'),{status:404});
     await audit(db,auth,'round.updated','round',rm[1],{status:r.rows[0].status,progress:r.rows[0].progress,severity:r.rows[0].severity});return reply(r.rows[0]);
   }
 
-  if(url.pathname==='/api/transports'&&method==='GET')
-    return reply((await db.query('SELECT * FROM transports WHERE facility_id=$1 ORDER BY due_at NULLS LAST',[f])).rows);
+  if(url.pathname==='/api/transports'&&method==='GET'){
+    const q=auth.role==='driver'
+      ? await db.query('SELECT * FROM transports WHERE facility_id=$1 AND driver_subject=$2 ORDER BY due_at NULLS LAST',[f,auth.subject])
+      : await db.query('SELECT * FROM transports WHERE facility_id=$1 ORDER BY due_at NULLS LAST',[f]);
+    return reply(q.rows);
+  }
   const trm=url.pathname.match(/^\/api\/transports\/([^/]+)$/);
   if(trm&&isUuid(trm[1])&&method==='PATCH'){
     need(auth,new Set(['manager','driver']));const b=await bodyJson(request);
     if(b.status&&!['scheduled','in_progress','completed','cancelled'].includes(b.status))throw Object.assign(new Error('invalid status'),{status:400});
-    const r=await db.query(`UPDATE transports SET status=COALESCE($1,status),temperature=COALESCE($2,temperature),checklist=COALESCE($3::jsonb,checklist),note=COALESCE($4,note),
+    const params=[b.status||null,b.temperature??null,b.checklist?JSON.stringify(b.checklist):null,b.note||null,trm[1],f];
+    let sql=`UPDATE transports SET status=COALESCE($1,status),temperature=COALESCE($2,temperature),checklist=COALESCE($3::jsonb,checklist),note=COALESCE($4,note),
       completed_at=CASE WHEN $1='completed' THEN now() ELSE completed_at END,updated_at=now()
-      WHERE id=$5 AND facility_id=$6 RETURNING *`,
-      [b.status||null,b.temperature??null,b.checklist?JSON.stringify(b.checklist):null,b.note||null,trm[1],f]);
+      WHERE id=$5 AND facility_id=$6`;
+    if(auth.role==='driver'){params.push(auth.subject);sql+=' AND driver_subject=$7'}
+    const r=await db.query(sql+' RETURNING *',params);
     if(!r.rowCount)throw Object.assign(new Error('transport not found'),{status:404});
     await audit(db,auth,'transport.updated','transport',trm[1],{status:r.rows[0].status,temperature:r.rows[0].temperature});return reply(r.rows[0]);
   }
@@ -246,20 +292,29 @@ async function route(db,request,url,auth){
   }
 
   if(url.pathname==='/api/kennels'&&method==='GET')return reply((await db.query('SELECT * FROM kennels WHERE facility_id=$1 AND active=true ORDER BY zone,name',[f])).rows);
-  if(url.pathname==='/api/tasks'&&method==='GET')return reply((await db.query('SELECT * FROM care_tasks WHERE facility_id=$1 ORDER BY due_at NULLS LAST,created_at DESC',[f])).rows);
+  if(url.pathname==='/api/tasks'&&method==='GET'){
+    const q=auth.role==='attendant'
+      ? await db.query('SELECT * FROM care_tasks WHERE facility_id=$1 AND assigned_subject=$2 ORDER BY due_at NULLS LAST,created_at DESC',[f,auth.subject])
+      : await db.query('SELECT * FROM care_tasks WHERE facility_id=$1 ORDER BY due_at NULLS LAST,created_at DESC',[f]);
+    return reply(q.rows);
+  }
   if(url.pathname==='/api/tasks'&&method==='POST'){
     need(auth,WRITE_CARE);const b=await bodyJson(request),id=crypto.randomUUID();
     if(b.animal_id!=null)await requireAnimalInFacility(db,auth,b.animal_id);
+    const assigned=b.assigned_subject!=null?await requireStaffSubjectInFacility(db,auth,b.assigned_subject):null;
     const r=await db.query(`INSERT INTO care_tasks(id,facility_id,animal_id,type,detail,due_at,status,severity,assigned_subject)
       VALUES($1,$2,$3,$4,$5,$6,'open',$7,$8) RETURNING *`,
-      [id,f,b.animal_id||null,b.type,b.detail||'',b.due_at||null,b.severity||'green',b.assigned_subject||null]);
+      [id,f,b.animal_id||null,b.type,b.detail||'',b.due_at||null,b.severity||'green',assigned]);
     await audit(db,auth,'task.created','care_task',id,{type:b.type});return reply(r.rows[0],201)
   }
   const tm=url.pathname.match(/^\/api\/tasks\/([^/]+)$/);
   if(tm&&isUuid(tm[1])&&method==='PATCH'){
     need(auth,WRITE_CARE);const b=await bodyJson(request), status=b.status;
     if(!['open','in_progress','completed','cancelled'].includes(status))throw Object.assign(new Error('invalid status'),{status:400});
-    const r=await db.query('UPDATE care_tasks SET status=$1,completed_at=CASE WHEN $1=\'completed\' THEN now() ELSE completed_at END,updated_at=now() WHERE id=$2 AND facility_id=$3 RETURNING *',[status,tm[1],f]);
+    const params=[status,tm[1],f];
+    let sql='UPDATE care_tasks SET status=$1,completed_at=CASE WHEN $1=\'completed\' THEN now() ELSE completed_at END,updated_at=now() WHERE id=$2 AND facility_id=$3';
+    if(auth.role==='attendant'){params.push(auth.subject);sql+=' AND assigned_subject=$4'}
+    const r=await db.query(sql+' RETURNING *',params);
     if(!r.rowCount)throw Object.assign(new Error('task not found'),{status:404});
     await audit(db,auth,'task.status','care_task',tm[1],{status});return reply(r.rows[0])
   }

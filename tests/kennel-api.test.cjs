@@ -1,0 +1,247 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {TOKEN_KEY,create}=require('../GENEVIEVE_CATS_DOGS_LIVE_DEMO/kennel-api.js');
+
+function storage(){
+  const m=new Map();
+  return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,String(v)),removeItem:k=>m.delete(k)};
+}
+function response(status,body){
+  return {ok:status>=200&&status<300,status,async json(){return body}};
+}
+
+test('connect validates before storing and staff uses bearer token',async()=>{
+  const seen=[],s=storage();
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/session')return response(200,{facilityId:'f1',role:'manager'});
+    if(path==='/api/staff')return response(200,[{name:'Demo Manager'}]);
+    return response(404,{error:'not found'});
+  }});
+  const session=await api.connect('synthetic-secret');
+  assert.equal(session.role,'manager');
+  assert.equal(s.getItem(TOKEN_KEY),'synthetic-secret');
+  const staff=await api.staff();
+  assert.equal(staff.length,1);
+  assert.equal(seen[0].opts.headers.authorization,'Bearer synthetic-secret');
+  assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic-secret');
+});
+
+test('rejected connect clears session token',async()=>{
+  const s=storage();s.setItem(TOKEN_KEY,'old-token');
+  const api=create({storage:s,fetchImpl:async()=>response(401,{error:'invalid or expired token'})});
+  await assert.rejects(()=>api.connect('bad-token'),e=>e.status===401);
+  assert.equal(s.getItem(TOKEN_KEY),null);
+});
+
+test('disconnect removes token and unauthenticated request fails closed',async()=>{
+  const s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async()=>response(200,{})});
+  api.disconnect();
+  assert.equal(api.hasToken(),false);
+  await assert.rejects(()=>api.staff(),e=>e.status===401);
+});
+
+
+test('animal methods stay on authenticated same-origin API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/animals'&&opts.method==='GET')return response(200,[{id:'a1',facility_id:'f1',name:'Demo Dog'}]);
+    if(path==='/api/animals'&&opts.method==='POST')return response(201,{id:'a2',facility_id:'f1',name:'New Dog'});
+    return response(404,{error:'not found'});
+  }});
+  const animals=await api.animals();
+  assert.equal(animals[0].facility_id,'f1');
+  const created=await api.createAnimal({name:'New Dog',species:'Dog'});
+  assert.equal(created.id,'a2');
+  assert.equal(seen[0].path,'/api/animals');
+  assert.equal(seen[1].path,'/api/animals');
+  assert.equal(seen[1].opts.method,'POST');
+  assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic');
+});
+
+
+test('booking methods use authenticated facility API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/bookings'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/bookings'&&opts.method==='POST')return response(201,{id:'b1',status:'due'});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.bookings(),[]);
+  const made=await api.createBooking({animal_id:'a1',booking_type:'drop_off',due_at:'2026-10-16T00:00:00.000Z'});
+  assert.equal(made.id,'b1');
+  assert.equal(seen[1].opts.method,'POST');
+  assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic');
+});
+
+
+test('custody methods use authenticated API and never choose actor from browser form',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/custody'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/custody'&&opts.method==='POST')return response(201,{id:'c1',staff_subject:'manager.demo'});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.custody(),[]);
+  const made=await api.createCustody({animal_id:'a1',direction:'drop_off',condition_note:'Synthetic'});
+  assert.equal(made.staff_subject,'manager.demo');
+  assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic');
+  assert.ok(!JSON.parse(seen[1].opts.body).staff_subject);
+});
+
+
+test('care-task methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/tasks'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/tasks'&&opts.method==='POST')return response(201,{id:'t1',status:'open'});
+    if(path==='/api/tasks/t1'&&opts.method==='PATCH')return response(200,{id:'t1',status:'completed'});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.tasks(),[]);
+  assert.equal((await api.createTask({type:'Synthetic'})).id,'t1');
+  assert.equal((await api.updateTask('t1',{status:'completed'})).status,'completed');
+  assert.equal(seen[2].path,'/api/tasks/t1');
+  assert.equal(seen[2].opts.headers.authorization,'Bearer synthetic');
+});
+
+
+test('stock methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/stock'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/stock'&&opts.method==='POST')return response(201,{id:'s1'});
+    if(path==='/api/stock/s1'&&opts.method==='PATCH')return response(200,{id:'s1',quantity:5});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.stock(),[]);
+  assert.equal((await api.createStock({item:'Synthetic',category:'Food'})).id,'s1');
+  assert.equal((await api.updateStock('s1',{quantity:5})).quantity,5);
+  assert.equal(seen[2].opts.headers.authorization,'Bearer synthetic');
+});
+
+
+test('rounds and transport methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/rounds'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/rounds/r1'&&opts.method==='PATCH')return response(200,{id:'r1',status:'completed'});
+    if(path==='/api/transports'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/transports/x1'&&opts.method==='PATCH')return response(200,{id:'x1',status:'completed'});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.rounds(),[]);
+  assert.equal((await api.updateRound('r1',{status:'completed'})).status,'completed');
+  assert.deepEqual(await api.transports(),[]);
+  assert.equal((await api.updateTransport('x1',{status:'completed'})).status,'completed');
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
+});
+
+
+test('incident and audit methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/incidents'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/incidents'&&opts.method==='POST')return response(201,{id:'i1',severity:'amber'});
+    if(path==='/api/audit'&&opts.method==='GET')return response(200,[]);
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.incidents(),[]);
+  assert.equal((await api.createIncident({type:'Near miss',severity:'amber'})).id,'i1');
+  assert.deepEqual(await api.audit(),[]);
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
+});
+
+
+test('compliance methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/compliance'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/compliance'&&opts.method==='POST')return response(200,{id:'c1',status:'current'});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.compliance(),[]);
+  assert.equal((await api.saveCompliance({item:'Synthetic',status:'current'})).id,'c1');
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
+});
+
+
+test('dashboard and alert methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/dashboard')return response(200,{animals:1,openTasks:2,openIncidents:0,kennels:3,expiredStock:0});
+    if(path==='/api/alerts')return response(200,[]);
+    return response(404,{error:'not found'});
+  }});
+  assert.equal((await api.dashboard()).animals,1);
+  assert.deepEqual(await api.alerts(),[]);
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
+});
+
+
+test('emergency methods use authenticated API and explicit human actions',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/emergency'&&opts.method==='GET')return response(200,{active:false,checks:{}});
+    if(path==='/api/emergency'&&opts.method==='POST')return response(200,{active:true,type:'Synthetic drill'});
+    return response(404,{error:'not found'});
+  }});
+  assert.equal((await api.emergency()).active,false);
+  assert.equal((await api.emergencyAction({action:'activate',type:'Synthetic drill'})).active,true);
+  assert.equal(JSON.parse(seen[1].opts.body).action,'activate');
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
+});
+
+
+test('kennel-room method uses authenticated API route',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/kennels')return response(200,[]);
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.kennels(),[]);
+  assert.equal(seen[0].opts.headers.authorization,'Bearer synthetic');
+});
+
+
+test('owner-scoped portal methods use authenticated owner routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic-owner');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/owner/me')return response(200,{animal:{id:'a1'},updates:[]});
+    if(path==='/api/owner/pickup-authority-requests'&&opts.method==='POST')return response(201,{id:'p1',status:'pending'});
+    return response(404,{error:'not found'});
+  }});
+  assert.equal((await api.ownerMe()).animal.id,'a1');
+  assert.equal((await api.ownerPickupRequest({collector:'Synthetic Collector'})).id,'p1');
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic-owner'));
+});
+
+
+test('staff pickup-authority review methods use authenticated manager/reception routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic-manager');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/pickup-authority-requests'&&opts.method==='GET')return response(200,[{id:'p1',status:'pending'}]);
+    if(path==='/api/pickup-authority-requests/p1'&&opts.method==='PATCH')return response(200,{id:'p1',status:'approved'});
+    return response(404,{error:'not found'});
+  }});
+  const rows=await api.pickupAuthorityRequests();
+  assert.equal(rows[0].status,'pending');
+  const reviewed=await api.reviewPickupAuthorityRequest('p1',{status:'approved'});
+  assert.equal(reviewed.status,'approved');
+  assert.equal(seen[1].path,'/api/pickup-authority-requests/p1');
+  assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic-manager');
+});
