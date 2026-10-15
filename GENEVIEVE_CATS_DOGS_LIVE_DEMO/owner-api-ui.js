@@ -9,6 +9,20 @@
   const fmt=(x)=>window.GUI&&window.GUI.fmt?window.GUI.fmt(x):esc(x);
   const connected=()=>Boolean(client&&client.hasToken());
   function setStatus(text,state='outline'){if(statusEl)statusEl.innerHTML=badge(text,state)}
+  function renderPickupRequests(data){
+    const pickup=document.getElementById('pickupPeople');if(!pickup)return;
+    pickup.textContent='Existing authority details are not exposed here. Requests below are review records only; even an approved request does not release the animal.';
+    let holder=document.getElementById('ownerPickupRequestStatus');
+    if(!holder){
+      holder=document.createElement('div');holder.id='ownerPickupRequestStatus';holder.className='list';
+      pickup.insertAdjacentElement('afterend',holder);
+    }
+    const rows=data.pickup_requests||[];
+    holder.innerHTML=rows.map(r=>{
+      const state=r.status==='approved'?'green':r.status==='declined'?'red':r.status==='pending'?'amber':'outline';
+      return '<div class="row"><div class="species-icon">⇧</div><div class="row-grow"><b>'+esc(r.collector)+'</b><small>'+fmt(r.created_at)+' · '+esc(r.note||'No note')+'<br>'+(r.status==='approved'?'Authority request approved for staff use; physical pickup still requires identity and custody-release checks.':r.status==='declined'?'Authority request declined.':'Waiting for manager/reception review.')+'</small></div>'+badge(String(r.status||'').toUpperCase(),state)+'</div>';
+    }).join('')||'<p class="small">No pickup-authority change requests yet.</p>';
+  }
   async function render(){
     if(!connected())return false;
     try{
@@ -21,8 +35,7 @@
       if(profile)profile.innerHTML='<section class="mobile-card"><div class="row"><div class="species-icon">'+(a.species==='Cat'?'🐈':'🐕')+'</div><div class="row-grow"><p class="eyebrow">Verified owner view</p><h2 style="margin:0">'+esc(a.name||'Animal')+'</h2><small>'+esc(a.species||'')+' · '+esc(a.breed||'')+'</small></div>'+badge('PRIVATE','green')+'</div><div class="grid two small"><p><b>Vaccination</b><br>'+esc(a.vaccination_status||'Not entered')+'</p><p><b>Diet</b><br>'+esc(a.diet||'Not entered')+'</p><p><b>Medication</b><br>'+esc(a.medication_plan||'None entered')+'</p><p><b>Care note</b><br>'+esc(a.behaviour_notes||'No approved note')+'</p></div></section>';
       const updates=document.getElementById('ownerUpdates');
       if(updates)updates.innerHTML=(data.updates||[]).map(u=>'<div class="row"><div class="species-icon">♥</div><div class="row-grow"><b>'+fmt(u.created_at)+'</b><small>'+esc(u.message)+'</small></div></div>').join('')||'<p class="small">No approved updates yet.</p>';
-      const pickup=document.getElementById('pickupPeople');
-      if(pickup)pickup.textContent='Existing authority details are not exposed here. Submit a verified change request below.';
+      renderPickupRequests(data);
       setStatus('OWNER VERIFIED','green');
       return true;
     }catch(e){
@@ -53,7 +66,8 @@
     const f=new FormData(form);
     try{
       await client.ownerPickupRequest({collector:String(f.get('collector')||'').trim(),note:String(f.get('note')||'').trim()||null});
-      form.reset();window.GUI?.toast('Pickup authority request sent securely for staff review');
+      form.reset();window.GUI?.toast('Pickup authority request sent securely for staff review. This is not a release authorisation.');
+      await render();
     }catch(e){
       if(e&&e.status===401)client.disconnect();
       window.GUI?.toast('Request was not sent: '+(e&&e.message||'backend error'));
