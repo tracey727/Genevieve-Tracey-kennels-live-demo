@@ -50,6 +50,7 @@
   function init(){
     if(!window.KennelAPI)return;
     client=window.KennelAPI.sharedClient();build();if(connected())render();
+    window.addEventListener('genevieve:kennels-api-session',()=>{if(connected())render()});
   }
   window.KennelComplianceBackend={connected,render};
   document.addEventListener('DOMContentLoaded',init);
