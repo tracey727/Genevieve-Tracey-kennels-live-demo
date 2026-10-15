@@ -92,3 +92,20 @@ test('custody methods use authenticated API and never choose actor from browser 
   assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic');
   assert.ok(!JSON.parse(seen[1].opts.body).staff_subject);
 });
+
+
+test('care-task methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/tasks'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/tasks'&&opts.method==='POST')return response(201,{id:'t1',status:'open'});
+    if(path==='/api/tasks/t1'&&opts.method==='PATCH')return response(200,{id:'t1',status:'completed'});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.tasks(),[]);
+  assert.equal((await api.createTask({type:'Synthetic'})).id,'t1');
+  assert.equal((await api.updateTask('t1',{status:'completed'})).status,'completed');
+  assert.equal(seen[2].path,'/api/tasks/t1');
+  assert.equal(seen[2].opts.headers.authorization,'Bearer synthetic');
+});
