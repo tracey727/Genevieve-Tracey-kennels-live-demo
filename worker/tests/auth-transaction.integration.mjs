@@ -123,11 +123,38 @@ try{
   }));
   assert.equal(r.status,400,'unverified collector identity must block pickup');
 
+  r=await json(await request('/api/bookings',{
+    method:'POST',bearer:token('manager-a'),
+    body:{animal_id:ANIMAL_A,booking_type:'drop_off',due_at:new Date().toISOString()}
+  }));
+  assert.equal(r.status,201,'synthetic drop-off booking must be created');
+  const dropBookingId=r.body.id;
+  r=await json(await request('/api/custody',{
+    method:'POST',bearer:token('manager-a'),
+    body:{animal_id:ANIMAL_A,direction:'drop_off',condition_note:'Synthetic safe arrival',identity_status:'Verified'}
+  }));
+  assert.equal(r.status,201,'verified drop-off with booking must succeed');
+  const dropBooking=await db.query('SELECT status FROM bookings WHERE id=$1',[dropBookingId]);
+  assert.equal(dropBooking.rows[0].status,'completed','drop-off must complete matching booking');
+
+  r=await json(await request('/api/bookings',{
+    method:'POST',bearer:token('manager-a'),
+    body:{animal_id:ANIMAL_A,booking_type:'pick_up',due_at:new Date().toISOString()}
+  }));
+  assert.equal(r.status,201,'synthetic pickup booking must be created');
+  const pickupBookingId=r.body.id;
   r=await json(await request('/api/custody',{
     method:'POST',bearer:token('manager-a'),
     body:{animal_id:ANIMAL_A,direction:'pick_up',condition_note:'Synthetic pickup',identity_status:'Verified',collector:'Synthetic Collector'}
   }));
   assert.equal(r.status,201,'approved collector with verified identity should permit audited pickup');
+  const pickupBooking=await db.query('SELECT status FROM bookings WHERE id=$1',[pickupBookingId]);
+  assert.equal(pickupBooking.rows[0].status,'completed','pickup must complete matching booking');
+  r=await json(await request('/api/custody',{
+    method:'POST',bearer:token('manager-a'),
+    body:{animal_id:ANIMAL_A,direction:'pick_up',condition_note:'Duplicate pickup',identity_status:'Verified',collector:'Synthetic Collector'}
+  }));
+  assert.equal(r.status,409,'duplicate release must be denied');
   assert.equal(r.body.staff_subject,'manager.a','server must record authenticated custody operator');
 
 
