@@ -111,6 +111,25 @@ try{
   assert.equal(r.status,200);
   assert.ok(r.body.pickup_requests.some(x=>x.id===pickupRequestId&&x.status==='approved'),'owner must see reviewed pickup-authority status');
   assert.ok(!r.body.custody_records,'authority review must not be represented as physical custody release');
+  r=await json(await request('/api/custody',{
+    method:'POST',bearer:token('manager-a'),
+    body:{animal_id:ANIMAL_A,direction:'pick_up',condition_note:'Synthetic pickup',identity_status:'Verified',collector:'Unauthorised Collector'}
+  }));
+  assert.equal(r.status,403,'unapproved collector must never receive custody');
+
+  r=await json(await request('/api/custody',{
+    method:'POST',bearer:token('manager-a'),
+    body:{animal_id:ANIMAL_A,direction:'pick_up',condition_note:'Synthetic pickup',identity_status:'Unverified',collector:'Synthetic Collector'}
+  }));
+  assert.equal(r.status,400,'unverified collector identity must block pickup');
+
+  r=await json(await request('/api/custody',{
+    method:'POST',bearer:token('manager-a'),
+    body:{animal_id:ANIMAL_A,direction:'pick_up',condition_note:'Synthetic pickup',identity_status:'Verified',collector:'Synthetic Collector'}
+  }));
+  assert.equal(r.status,201,'approved collector with verified identity should permit audited pickup');
+  assert.equal(r.body.staff_subject,'manager.a','server must record authenticated custody operator');
+
 
   r=await json(await request('/api/animals',{bearer:token('manager-a')}));
   assert.equal(r.status,200);
