@@ -71,6 +71,9 @@
       updateRound:(id,body)=>request('/api/rounds/'+encodeURIComponent(id),{method:'PATCH',body}),
       transports:()=>request('/api/transports'),
       updateTransport:(id,body)=>request('/api/transports/'+encodeURIComponent(id),{method:'PATCH',body}),
+      incidents:()=>request('/api/incidents'),
+      createIncident:(body)=>request('/api/incidents',{method:'POST',body}),
+      audit:()=>request('/api/audit'),
       request
     };
   }
