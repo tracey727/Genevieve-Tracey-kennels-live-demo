@@ -109,3 +109,19 @@ test('care-task methods use authenticated API routes',async()=>{
   assert.equal(seen[2].path,'/api/tasks/t1');
   assert.equal(seen[2].opts.headers.authorization,'Bearer synthetic');
 });
+
+
+test('stock methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/stock'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/stock'&&opts.method==='POST')return response(201,{id:'s1'});
+    if(path==='/api/stock/s1'&&opts.method==='PATCH')return response(200,{id:'s1',quantity:5});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.stock(),[]);
+  assert.equal((await api.createStock({item:'Synthetic',category:'Food'})).id,'s1');
+  assert.equal((await api.updateStock('s1',{quantity:5})).quantity,5);
+  assert.equal(seen[2].opts.headers.authorization,'Bearer synthetic');
+});
