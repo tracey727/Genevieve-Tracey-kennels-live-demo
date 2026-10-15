@@ -80,6 +80,8 @@
       saveCompliance:(body)=>request('/api/compliance',{method:'POST',body}),
       dashboard:()=>request('/api/dashboard'),
       alerts:()=>request('/api/alerts'),
+      emergency:()=>request('/api/emergency'),
+      emergencyAction:(body)=>request('/api/emergency',{method:'POST',body}),
       request
     };
   }
