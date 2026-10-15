@@ -228,3 +228,20 @@ test('owner-scoped portal methods use authenticated owner routes',async()=>{
   assert.equal((await api.ownerPickupRequest({collector:'Synthetic Collector'})).id,'p1');
   assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic-owner'));
 });
+
+
+test('staff pickup-authority review methods use authenticated manager/reception routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic-manager');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/pickup-authority-requests'&&opts.method==='GET')return response(200,[{id:'p1',status:'pending'}]);
+    if(path==='/api/pickup-authority-requests/p1'&&opts.method==='PATCH')return response(200,{id:'p1',status:'approved'});
+    return response(404,{error:'not found'});
+  }});
+  const rows=await api.pickupAuthorityRequests();
+  assert.equal(rows[0].status,'pending');
+  const reviewed=await api.reviewPickupAuthorityRequest('p1',{status:'approved'});
+  assert.equal(reviewed.status,'approved');
+  assert.equal(seen[1].path,'/api/pickup-authority-requests/p1');
+  assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic-manager');
+});
