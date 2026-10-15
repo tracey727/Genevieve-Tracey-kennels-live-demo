@@ -54,8 +54,7 @@
     });
     panel.querySelector('[data-kennel-api-disconnect]').addEventListener('click',()=>{
       client.disconnect();input.value='';localMessage();
-      if(window.GStore&&typeof window.GStore.get==='function'&&typeof window.renderKennelsApp==='function')window.renderKennelsApp();
-      else location.reload();
+      location.reload();
     });
     if(client.hasToken())render();else localMessage();
   }
