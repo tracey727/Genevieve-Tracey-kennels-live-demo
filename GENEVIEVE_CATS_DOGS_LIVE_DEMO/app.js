@@ -49,6 +49,7 @@
   function populateOptions(s){qsa('[data-animal-options]').forEach(sel=>{const v=sel.value;sel.innerHTML=s.animals.map(a=>`<option value="${a.id}">${esc(a.name)} · ${esc(a.species)}</option>`).join('');if(v)sel.value=v});qsa('[data-staff-options]').forEach(sel=>{const v=sel.value;sel.innerHTML=s.staff.filter(x=>x.onShift).map(x=>`<option value="${x.id}">${esc(x.name)} · ${esc(x.role)}</option>`).join('');if(v)sel.value=v});const incidentAnimal=qs('#incidentForm [name=animalId]');if(incidentAnimal){const v=incidentAnimal.value;incidentAnimal.innerHTML='<option value="">Facility / no animal</option>'+s.animals.map(a=>`<option value="${a.id}">${esc(a.name)} · ${esc(a.species)}</option>`).join('');if(v)incidentAnimal.value=v}}
   function render(){const s=S();populateOptions(s);renderDashboard(s);renderAnimals(s);renderBookings(s);renderCustody(s);renderRooms(s);renderMatching(s);renderTasks(s);renderStock(s);renderRounds(s);renderTransport(s);renderStaff(s);renderEmergency(s);renderIncidents(s)}
   window.renderKennelsApp=render;
+  window.addEventListener('genevieve:kennels-api-session',()=>render());
   function openModal(id){qs('#'+id)?.classList.add('open')}
   function closeModal(id){qs('#'+id)?.classList.remove('open')}
   document.addEventListener('DOMContentLoaded',()=>{
