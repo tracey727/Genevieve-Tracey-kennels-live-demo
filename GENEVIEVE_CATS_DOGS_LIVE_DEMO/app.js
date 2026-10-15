@@ -5,7 +5,7 @@
   const staff=(s,id)=>s.staff.find(a=>a.id===id)||{};
   function go(name,updateHash=true){if(!qs('#'+name))name='dashboard';qsa('.screen').forEach(x=>x.classList.toggle('active',x.id===name));qsa('.nav-btn').forEach(x=>x.classList.toggle('active',x.dataset.screen===name));if(updateHash)history.replaceState(null,'','#'+name);scrollTo({top:0,behavior:'smooth'})}
   function statePanel(s){const f=GStore.calculateFacilityState(s);return `<div class="state-card"><div class="state-icon">✓</div><div><p class="eyebrow">Current facility state</p><h2>${esc(f.label)}</h2><p>${esc(f.reason)}</p></div><div class="traffic"><div class="light"><span class="bulb g ${f.state==='green'?'active':''}"></span>GREEN<br>NORMAL</div><div class="light"><span class="bulb a"></span>AMBER<br>CAUTION</div><div class="light"><span class="bulb r ${f.state==='red'?'active':''}"></span>RED<br>EMERGENCY</div></div></div>`}
-  function renderDashboard(s){
+  function renderDashboard(s){if(window.KennelDashboardBackend&&window.KennelDashboardBackend.connected()){window.KennelDashboardBackend.render();return}
     qs('#facilityState').innerHTML=statePanel(s);
     const dogs=s.animals.filter(a=>a.species==='Dog'&&a.status!=='Departed').length,cats=s.animals.filter(a=>a.species==='Cat'&&a.status!=='Departed').length;
     const completed=s.rounds.filter(r=>r.status==='Completed').length,openAlerts=s.alerts.filter(a=>a.status==='Open').length,on=s.staff.filter(x=>x.onShift).length;
