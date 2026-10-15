@@ -79,16 +79,11 @@
        reason:'SIMULATED TRAINING SCENARIO — no actual warning, forecast or live weather connection.',
        relevant:true,official:false,simulated:true,checks:CHECKS[event.hazardType],ageMinutes:Math.floor((at-from)/60000)};
    }
-   // Fail closed on ALL other sources until an approved feed bridge exists, with
-   // explicit source verification and a true area authority.
-   const approved=event.productionUse==='approved'&&event.verifiedByAuthority===true&&
-     event.receivedViaApprovedAdapter===true&&typeof event.officialWarningLevel==='string'&&event.officialWarningLevel.trim();
-   if(!approved) return {state:'HOLD',reason:'Feed is not approved or the official warning and location evidence cannot be verified.',relevant:true,official:false,checks:CHECKS[event.hazardType]};
-   // Future approved-adapter contract only; no live adapter wired in this app.
-   return {state:event.internalLevel==='critical'?'RED':event.internalLevel.toUpperCase(),
-     reason:'Source and timestamp verified; confirm current official instructions from the original issuer.',
-     relevant:true,official:true,simulated:false,officialWarningLevel:event.officialWarningLevel,
-     checks:CHECKS[event.hazardType],ageMinutes:Math.floor((at-from)/60000)};
+   // There is no authenticated, reviewed, read-only bridge in this browser demo.
+   // Never trust client-originated fields claiming they came from official sources.
+   // Even a forged "approved" record stays HOLD until a server-side adapter exists.
+   return {state:'HOLD',reason:'No approved and authenticated live warning adapter is connected to this Kennels demo.',relevant:true,official:false,checks:CHECKS[event.hazardType]};
+
  }
  function scenario(type,now=new Date().toISOString()){
    if(!SUPPORTED.has(type))return null;
