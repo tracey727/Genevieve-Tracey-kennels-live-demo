@@ -29,6 +29,7 @@
       <button class="nav-btn" data-screen="matching"><span class="icon">⚖</span>Placement & Matching</button>
       <button class="nav-btn" data-screen="care"><span class="icon">♥</span>Care & Health</button>
       <button class="nav-btn" data-screen="stock"><span class="icon">▦</span>Stock & Supplies</button>
+      <button class="nav-btn" data-screen="kennel-business"><span class="icon">◈</span>Business & Staff Hub</button>
       <button class="nav-btn" data-screen="rounds"><span class="icon">◷</span>Rounds (Live)</button>
       <button class="nav-btn" data-screen="transport"><span class="icon">▰</span>Transport</button>
       <button class="nav-btn" data-screen="staff"><span class="icon">♟</span>Staff & WHS</button>
@@ -118,6 +119,96 @@
 
       <section id="compliance" class="screen"><div class="card watermark"><p class="eyebrow">Design support, not legal certification</p><h2>Safety, privacy, animal welfare and insurance controls</h2><p>This demonstration assists record keeping and safer workflows. The operating business must have its own current council approvals, procedures, training, insurance and professional legal advice.</p></div><div class="grid two"><div class="card"><h2>Controls built into the demo</h2><div class="list"><div class="row"><div class="species-icon">🐾</div><div class="row-grow"><b>Animal duty-of-care records</b><small>Water, food, accommodation, health, handling, transport and welfare observations.</small></div></div><div class="row"><div class="species-icon">🛡</div><div class="row-grow"><b>WHS and notifiable-incident prompts</b><small>Serious events require immediate emergency action and external reporting decisions by the business.</small></div></div><div class="row"><div class="species-icon">🔒</div><div class="row-grow"><b>Role-based and minimum-necessary information design</b><small>Production requires secure accounts, database controls, backups and retention settings.</small></div></div><div class="row"><div class="species-icon">▰</div><div class="row-grow"><b>Transport safety checklist</b><small>Secure containment, ventilation, temperature and custody handover.</small></div></div></div></div><div class="card"><h2>Official references for the kennel to review</h2><ul class="small"><li><a href="https://www.business.qld.gov.au/industries/farms-fishing-forestry/agriculture/animal/health/welfare/duty" target="_blank">Queensland animal duty of care</a></li><li><a href="https://www.worksafe.qld.gov.au/safety-and-prevention/hazards/workplace-hazards/agriculture/animal-handling" target="_blank">WorkSafe Queensland animal handling</a></li><li><a href="https://www.worksafe.qld.gov.au/safety-and-prevention/incidents-and-notifications/notify-us-of-an-incident" target="_blank">WHS incident notification</a></li><li><a href="https://www.workcoverqld.com.au/claims-and-insurance/workcover-insurance/types-of-insurance" target="_blank">WorkCover Queensland insurance</a></li><li><a href="https://www.oaic.gov.au/privacy/privacy-guidance-for-organisations-and-government-agencies/handling-personal-information/guide-to-securing-personal-information" target="_blank">OAIC personal information security guidance</a></li><li><a href="https://www.oaic.gov.au/privacy/your-privacy-rights/surveillance-and-monitoring/workplace-monitoring-and-surveillance" target="_blank">Workplace monitoring and surveillance</a></li><li><a href="https://www.legislation.qld.gov.au/view/whole/html/current/act-2001-064" target="_blank">Animal Care and Protection Act 2001 (Qld)</a></li></ul></div></div></section>
 
+      
+      <section id="kennel-business" class="screen">
+        <div class="card-head"><div>
+          <p class="eyebrow">GENEVIEVE reuse · integrated kennel-specific workflows</p>
+          <h2>Business & Staff Operations Hub</h2>
+          <p class="small">Staff support, revenue protection, stock forecasting, accepted handovers and management action in one kennel view.</p>
+        </div><span class="badge amber">SYNTHETIC · THIS BROWSER ONLY</span></div>
+        <div class="alert-box">
+          <h3>Fictional training environment — not connected billing, payroll or veterinary advice</h3>
+          <p>These independently built kennel rules reuse relevant design patterns from Revenue Rescue, Stock Sense, FAIR BREAK, Shared Core, TIME SAVER, Council Operations and Nature Has No Borders. There are no cross-product database connections, invoice dispatches, purchases or real identities. Records and evidence stay in this browser demo until a separately approved authenticated backend migration.</p>
+        </div>
+        <div class="card"><h2>Management at a glance</h2><div id="kennelOverview"></div>
+          <div class="button-row">
+            <button type="button" class="btn secondary" data-load-kennel-examples>Load fictional financial and handover examples</button>
+            <button type="button" class="btn secondary" data-screen-link="safety-command">Staff safety & breaks</button>
+            <button type="button" class="btn secondary" data-screen-link="care">Animal care tasks</button>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card"><h2>Revenue protection & follow-up</h2><div id="kennelRevenue"></div></div>
+          <div class="card"><h2>Record evidence for kennel revenue</h2>
+            <form id="kennelFormService">
+              <p class="eyebrow">Completed service, not a booking estimate</p>
+              <div class="form-grid"><label>Service reference<input name="ref" required maxlength="40" placeholder="BOARD-2026-001"></label>
+              <label>Animal<select name="animalId" id="kennelServiceAnimal" required></select></label>
+              <label>Service type<select name="kind"><option>Boarding stay</option><option>Day care</option><option>Grooming add-on</option><option>Transport</option><option>Other agreed service</option></select></label>
+              <label>Agreed charge (AUD)<input name="amount" type="number" min="0.01" max="9999999" step="0.01" required></label></div>
+              <label class="checkline"><input name="verified" type="checkbox"> Completed service and agreed charge verified from an authoritative source</label>
+              <button type="submit" class="btn">Save service evidence</button>
+            </form><hr>
+            <form id="kennelFormInvoice">
+              <p class="eyebrow">Invoice evidence only · no invoices issued</p>
+              <div class="form-grid"><label>Invoice reference<input name="id" maxlength="40" required placeholder="INV-2026-001"></label>
+              <label>Related service<select name="serviceRef" id="kennelInvoiceService" required></select></label>
+              <label>Invoice amount (AUD)<input name="amount" type="number" min="0.01" step="0.01" required></label>
+              <label>Due date<input name="dueDate" type="date" required></label></div>
+              <label class="checkline"><input name="verified" type="checkbox"> Invoice is verified</label>
+              <label class="checkline"><input name="reconciled" type="checkbox"> All allocated payments have been reconciled as of this review</label>
+              <button type="submit" class="btn secondary">Save invoice evidence</button>
+            </form><hr>
+            <form id="kennelFormPayment">
+              <p class="eyebrow">Payment recording · resets invoice reconciliation</p>
+              <div class="form-grid"><label>Payment reference<input name="id" maxlength="40" required placeholder="PAY-001"></label>
+              <label>Linked invoice<select name="invoiceId" id="kennelPaymentInvoice" required></select></label>
+              <label>Paid amount (AUD)<input name="amount" type="number" min="0.01" step="0.01" required></label></div>
+              <label class="checkline"><input name="verified" type="checkbox"> Payment allocation is evidenced</label>
+              <button type="submit" class="btn secondary">Record payment; review reconciliation</button>
+            </form>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card"><h2>Supplies, demand & expiry prevention</h2><div id="kennelSupply"></div></div>
+          <div class="card"><h2>Record verified usage forecast</h2>
+            <form id="kennelFormStock">
+              <label>Stock item<select name="stockId" id="kennelStockSelect" required></select></label>
+              <div class="form-grid"><label>Units used per day<input name="rate" type="number" min="0.01" step="0.01" required></label>
+              <label>Supplier lead time (days)<input name="lead" type="number" min="0" max="365" step="1" required></label></div>
+              <label class="checkline"><input name="verified" type="checkbox" required> Estimate has been checked against source records</label>
+              <button type="submit" class="btn">Save consumption evidence</button>
+              <p class="small">The system advises when to review replenishment. It never places orders or assumes missing consumption data.</p>
+            </form>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card"><h2>Accepted staff handovers</h2><div id="kennelHandovers"></div></div>
+          <div class="card"><h2>Offer an accountable handover</h2>
+            <form id="kennelFormHandover">
+              <div class="form-grid"><label>From staff<select name="from" id="kennelHandoverFrom" required></select></label>
+              <label>Receiving staff<select name="to" id="kennelHandoverTo" required></select></label></div>
+              <label>Unresolved duty or task<input name="subject" maxlength="240" required placeholder="Confirm safety check before next shift"></label>
+              <label>Receiver to accept by<input name="dueAt" type="datetime-local" required></label>
+              <button type="submit" class="btn">Offer handover</button>
+              <p class="small">The handover remains open until accepted. Browser demo acceptance is NOT identity verification.</p>
+            </form>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card"><h2>Staff time, coverage & wellbeing</h2><div id="kennelWorkforce"></div></div>
+          <div class="card"><h2>Manager's evidence-backed action queue</h2><div id="kennelActionQueue"></div>
+            <form id="kennelFormReview">
+              <label>Finding to review<select name="findingId" id="kennelReviewFinding" required></select></label>
+              <label>Assigned staff member<select name="assignedTo" id="kennelReviewStaff" required></select></label>
+              <label>Review action or evidence note<textarea name="note" maxlength="500" required placeholder="What evidence needs checking? Who will act?"></textarea></label>
+              <button type="submit" class="btn">Assign for review (never auto-close)</button>
+            </form>
+          </div>
+        </div>
+        <p class="small">HOLD is a legitimate result. Human managers must verify every financial, welfare, staff, regulatory and purchasing decision. No claim of cash recovered, cost savings, compliance certification or productivity ranking is made by these demonstration rules.</p>
+      </section>
+
       <section id="apps" class="screen"><div class="card watermark"><div class="logo-panel"><img class="tree" src="./assets/genevieve-tree-logo.jpg" alt="GENEVIEVE tree logo"><div class="copy"><p class="eyebrow">One program · four views</p><h2>Management, employee rounds, transport and owner portal</h2><p class="small">Every phone view carries both of Genevieve’s exact supplied logos. The demo shares data between tabs in the same browser.</p></div><img class="ga" src="./assets/genevieve-ga-logo.png" alt="GENEVIEVE App GA logo"></div></div><div class="grid three"><div class="card"><h2>Employee rounds app</h2><p class="small">Species-specific rounds, tasks, notes, amber/red escalation and SOS.</p><a class="btn" href="./employee.html" target="_blank">Open employee app</a></div><div class="card"><h2>Driver transport app</h2><p class="small">Collection, delivery, crate, vehicle, temperature and handover checks.</p><a class="btn" href="./transport.html" target="_blank">Open driver app</a></div><div class="card"><h2>Owner portal</h2><p class="small">Approved updates, animal profile and authorised pickup details.</p><a class="btn" href="./owner.html" target="_blank">Open owner portal</a></div></div><div class="alert-box"><h3>Production requirement</h3><p>This static demonstration works without npm and opens on a computer. Production is locked to GitHub + Cloudflare + Neon. True real-time linking between separate employee phones requires the authenticated Worker API, secure hosted database, role permissions and backups before live animal or employee data is used.</p></div></section>
     </main>
   </div>
@@ -126,5 +217,5 @@
 <div id="intakeModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-head"><div><p class="eyebrow">New booking and intake</p><h2>Add a cat or dog</h2></div><button data-close="intakeModal" aria-label="Close">×</button></div><form id="intakeForm"><div class="form-grid three"><label>Species<select name="species"><option>Dog</option><option>Cat</option></select></label><label>Name<input name="name" required></label><label>Breed<input name="breed" required></label><label>Sex<select name="sex"><option>Female</option><option>Male</option><option>Unknown</option></select></label><label>Age<input name="age" placeholder="e.g. 4 yrs"></label><label>Weight<input name="weight" placeholder="e.g. 24 kg"></label><label>Owner<input name="owner" required></label><label>Vaccination<select name="vaccination"><option>Evidence awaiting check</option><option>Current</option><option>Expired / review required</option><option>Medical exemption — verify</option></select></label><label>Room<select name="room"><option>Unassigned — match before admission</option><option>General dog run</option><option>Quiet dog run</option><option>Cat suite</option><option>Senior cat suite</option><option>Isolation & medical</option></select></label></div><div class="form-grid"><label>Diet<textarea name="diet"></textarea></label><label>Medication<textarea name="medication"></textarea></label><label>Allergies<textarea name="allergies"></textarea></label><label>Behaviour and safe handling<textarea name="behaviour"></textarea></label></div><label>Authorised pickup people<input name="pickupAuthorised" required></label><div class="form-grid"><label class="checkline"><input type="checkbox" required> Emergency treatment authority recorded</label><label class="checkline"><input type="checkbox" required> Privacy and communication permissions recorded</label></div><button class="btn" type="submit">Save animal and booking</button></form></div></div>
 
 <div id="incidentModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-head"><div><p class="eyebrow">Incident or near miss</p><h2>Record facts and immediate actions</h2></div><button data-close="incidentModal" aria-label="Close">×</button></div><form id="incidentForm"><div class="form-grid"><label>Type<select name="type"><option>Animal injury</option><option>Worker injury</option><option>Dog bite / cat bite or scratch</option><option>Fight or unsafe interaction</option><option>Escape / gate breach</option><option>Medication or feeding error</option><option>Transport incident</option><option>Near miss</option><option>Other</option></select></label><label>Severity<select name="severity"><option value="amber">Amber — monitor</option><option value="amber">Amber — action required</option><option value="red">Red — urgent / external assessment</option></select></label><label>Animal<select name="animalId"><option value="">Facility / no animal</option></select></label><label>Responsible manager<select name="managerId" data-staff-options></select></label></div><label>What happened<textarea name="detail" required placeholder="Facts only: time, location, people, animals and immediate action"></textarea></label><label>Immediate controls and follow-up<textarea name="controls" required></textarea></label><div class="form-grid"><label class="checkline"><input type="checkbox"> Photograph/evidence preserved where appropriate</label><label class="checkline"><input type="checkbox"> Owner/vet/insurer/WHS notification decision escalated to manager</label></div><button class="btn red" type="submit">Log incident and alert manager</button></form></div></div>
-<script src="./store.js"></script><script src="./shared.js"></script><script src="./app.js"></script><script src="./safety-command.js"></script>
+<script src="./store.js"></script><script src="./shared.js"></script><script src="./app.js"></script><script src="./safety-command.js"></script><script src="./kennel-intelligence.js"></script><script src="./kennel-command-upgrade.js"></script>
 <script src="./register-sw.js"></script></body></html>
