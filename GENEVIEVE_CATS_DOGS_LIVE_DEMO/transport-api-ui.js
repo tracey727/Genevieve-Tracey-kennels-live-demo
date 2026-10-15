@@ -80,7 +80,7 @@
   function init(){
     if(!window.KennelAPI)return;
     client=window.KennelAPI.sharedClient();build();
-    document.getElementById('transportSelect')?.addEventListener('change',e=>{if(connected()){currentJob={id:e.target.value};render()}},true);
+    document.getElementById('transportSelect')?.addEventListener('change',e=>{if(connected()){e.preventDefault();e.stopImmediatePropagation();currentJob={id:e.target.value};render()}},true);
     document.getElementById('saveTransport')?.addEventListener('click',e=>{if(connected())save(false,e)},true);
     document.getElementById('completeTransport')?.addEventListener('click',e=>{if(connected())save(true,e)},true);
     if(connected())render();else setStatus('DEMO MODE','outline');
