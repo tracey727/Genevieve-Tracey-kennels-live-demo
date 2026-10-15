@@ -76,3 +76,19 @@ test('booking methods use authenticated facility API routes',async()=>{
   assert.equal(seen[1].opts.method,'POST');
   assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic');
 });
+
+
+test('custody methods use authenticated API and never choose actor from browser form',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/custody'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/custody'&&opts.method==='POST')return response(201,{id:'c1',staff_subject:'manager.demo'});
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.custody(),[]);
+  const made=await api.createCustody({animal_id:'a1',direction:'drop_off',condition_note:'Synthetic'});
+  assert.equal(made.staff_subject,'manager.demo');
+  assert.equal(seen[1].opts.headers.authorization,'Bearer synthetic');
+  assert.ok(!JSON.parse(seen[1].opts.body).staff_subject);
+});
