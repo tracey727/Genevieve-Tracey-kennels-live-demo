@@ -32,6 +32,7 @@
       <button class="nav-btn" data-screen="kennel-business"><span class="icon">◈</span>Business & Staff Hub</button>
       <button class="nav-btn" data-screen="rounds"><span class="icon">◷</span>Rounds (Live)</button>
       <button class="nav-btn" data-screen="transport"><span class="icon">▰</span>Transport</button>
+      <button class="nav-btn" data-screen="kennel-continuity"><span class="icon">♧</span>Care Continuity</button>
       <button class="nav-btn" data-screen="kennel-weather"><span class="icon">⛈</span>Weather & Hazard Safety</button>
       <button class="nav-btn" data-screen="kennel-relocation"><span class="icon">🚐</span>Pet Relocation & Travel</button>
       <button class="nav-btn" data-screen="staff"><span class="icon">♟</span>Staff & WHS</button>
@@ -124,6 +125,85 @@
       
       
       
+      
+      <section id="kennel-continuity" class="screen">
+        <div class="card-head"><div><p class="eyebrow">Aged Care · Childcare · Psychology → kennel-specific assurance</p>
+          <h2>Care Continuity & Staff Readiness</h2>
+          <p class="small">Prevent care responsibilities, collection checks and owner follow-ups from being lost between shifts.</p>
+        </div><span class="badge amber">FICTIONAL BROWSER DEMO ONLY</span></div>
+        <div class="alert-box"><h3>Care and protection — not medical or employment decisions</h3>
+          <p>Derived principles only. No aged-care, childcare, therapy, employee competency or patient records are connected. A missing record means HOLD for review, not a diagnosis, a staff failure or a disciplinary finding. Staff and management remain responsible for real animal welfare, lawful employment decisions and safe custody.</p>
+        </div>
+        <div class="card"><h2>Continuity attention board</h2><div id="continuityOverview"></div></div>
+        <div class="grid two">
+          <div class="card"><h2>Animal care-plan review dates</h2><div id="continuityPlans"></div></div>
+          <div class="card"><h2>Record a care-plan review</h2>
+            <form id="continuityFormReview">
+              <label>Animal<select id="continuityAnimal" name="animalId" required></select></label>
+              <div class="form-grid"><label>Demo manager/reviewer<select id="continuityManager" name="managerId" required></select></label>
+              <label>Next review due<input name="dueAt" type="date" required></label></div>
+              <button class="btn" type="submit">Record review evidence</button>
+              <p class="small">This records only a review date. Individual allergies, feeding and medication instructions still come from the animal's existing approved care record.</p>
+            </form>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card"><h2>On-duty staff training evidence</h2><div id="continuityReadiness"></div></div>
+          <div class="card"><h2>Record independent training attestation</h2>
+            <form id="continuityFormTraining">
+              <label>Staff member<select id="continuityStaff" name="staffId" required></select></label>
+              <label>Training category<select id="continuityTrainingCode" name="code" required></select></label>
+              <div class="form-grid"><label>Completion date<input name="completedAt" type="date" required></label>
+              <label>Recorded expiry/review date<input name="expiresAt" type="date" required></label></div>
+              <label>Separate manager attestor<select id="continuityTrainingManager" name="managerId" required></select></label>
+              <label class="checkline"><input name="attested" type="checkbox" required> Fictional manager checked the relevant evidence; no competence is automatically certified</label>
+              <button class="btn secondary" type="submit">Record training evidence</button>
+              <p class="small">Readiness requires current evidence for the appropriate role. A manager cannot attest their own readiness using this demo form.</p>
+            </form>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card"><h2>Authorised collection preflight</h2>
+            <form id="continuityFormPickup">
+              <label>Animal<select name="animalId" id="continuityCollectorAnimal" required></select></label>
+              <label>Collector name exactly as recorded<input name="collector" required maxlength="120" placeholder="Fictional authorised contact only"></label>
+              <label class="checkline"><input name="identity" type="checkbox"> Identity checked against appropriate evidence</label>
+              <label class="checkline"><input name="authority" type="checkbox"> Current pickup authorisation independently confirmed</label>
+              <label class="checkline"><input name="condition" type="checkbox"> Animal condition and belongings checked</label>
+              <label class="checkline"><input name="manager" type="checkbox"> Manager reviewed exceptions and approved proceeding to the real custody process</label>
+              <button class="btn secondary" type="submit">Check release readiness — no actual release</button>
+              <div id="continuityCollectionResult" class="alert-box" role="status" aria-live="polite">This demo cannot authorise or record a real animal release.</div>
+            </form>
+            <p class="small">Rejects partial-name matching. An approved demo checklist still does not transfer custody, substitute for government ID, or override an owner dispute.</p>
+          </div>
+          <div class="card"><h2>Owner callback & follow-up continuity</h2><div id="continuityFollowups"></div>
+            <form id="continuityFormCallback">
+              <div class="form-grid"><label>Animal<select name="animalId" id="continuityCallbackAnimal" required></select></label>
+              <label>Named staff owner<select name="assignedTo" id="continuityCallbackStaff" required></select></label></div>
+              <label>Reason for follow-up<input name="message" maxlength="160" required placeholder="Update owner on boarding handover"></label>
+              <label>Callback/update due by<input name="dueAt" type="datetime-local" required></label>
+              <button type="submit" class="btn">Assign follow-up</button>
+              <p class="small">Unreturned owner contacts remain open. No messages or real contact details are sent or collected here.</p>
+            </form>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card"><h2>Care cover when someone is unavailable</h2><div id="continuityCoverage"></div></div>
+          <div class="card"><h2>Propose named cover for existing care task</h2>
+            <form id="continuityFormCover">
+              <label>Existing assigned task<select name="taskId" id="continuityCareTask" required></select></label>
+              <label>Proposed active receiver<select name="receiverId" id="continuityCoverStaff" required></select></label>
+              <label>Independent manager/reviewer<select name="managerId" id="continuityCoverManager" required></select></label>
+              <button class="btn" type="submit">Offer cover — keep original task ownership</button>
+              <p class="small">A receiver can simulate acceptance. The original care task remains assigned to its existing owner until a future authenticated, atomic transfer is implemented and tested.</p>
+            </form>
+          </div>
+        </div>
+        <div class="alert-box"><h3>Production gates</h3>
+          <p>Before live use: real login and staff-role verification, role-specific training policy, authoritative animal-care plans, owner consent and authorised collector evidence, protected audit history, legal/privacy/insurance checks, database transactions and negative cross-facility tests. No surveillance, staff ranking, diagnostic claims or automated animal release.</p>
+        </div>
+      </section>
+
       <section id="kennel-weather" class="screen">
         <div class="card-head">
           <div><p class="eyebrow">Nature Has No Borders design reuse · no live emergency feed</p>
@@ -248,6 +328,7 @@
             <button type="button" class="btn secondary" data-screen-link="care">Animal care tasks</button>
             <button type="button" class="btn secondary" data-screen-link="kennel-relocation">Pet relocation & travel budget</button>
             <button type="button" class="btn secondary" data-screen-link="kennel-weather">Weather & hazard safety</button>
+            <button type="button" class="btn secondary" data-screen-link="kennel-continuity">Care continuity & staff readiness</button>
           </div>
         </div>
         <div class="grid two">
@@ -336,5 +417,5 @@
 <div id="intakeModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-head"><div><p class="eyebrow">New booking and intake</p><h2>Add a cat or dog</h2></div><button data-close="intakeModal" aria-label="Close">×</button></div><form id="intakeForm"><div class="form-grid three"><label>Species<select name="species"><option>Dog</option><option>Cat</option></select></label><label>Name<input name="name" required></label><label>Breed<input name="breed" required></label><label>Sex<select name="sex"><option>Female</option><option>Male</option><option>Unknown</option></select></label><label>Age<input name="age" placeholder="e.g. 4 yrs"></label><label>Weight<input name="weight" placeholder="e.g. 24 kg"></label><label>Owner<input name="owner" required></label><label>Vaccination<select name="vaccination"><option>Evidence awaiting check</option><option>Current</option><option>Expired / review required</option><option>Medical exemption — verify</option></select></label><label>Room<select name="room"><option>Unassigned — match before admission</option><option>General dog run</option><option>Quiet dog run</option><option>Cat suite</option><option>Senior cat suite</option><option>Isolation & medical</option></select></label></div><div class="form-grid"><label>Diet<textarea name="diet"></textarea></label><label>Medication<textarea name="medication"></textarea></label><label>Allergies<textarea name="allergies"></textarea></label><label>Behaviour and safe handling<textarea name="behaviour"></textarea></label></div><label>Authorised pickup people<input name="pickupAuthorised" required></label><div class="form-grid"><label class="checkline"><input type="checkbox" required> Emergency treatment authority recorded</label><label class="checkline"><input type="checkbox" required> Privacy and communication permissions recorded</label></div><button class="btn" type="submit">Save animal and booking</button></form></div></div>
 
 <div id="incidentModal" class="modal" role="dialog" aria-modal="true"><div class="modal-card"><div class="modal-head"><div><p class="eyebrow">Incident or near miss</p><h2>Record facts and immediate actions</h2></div><button data-close="incidentModal" aria-label="Close">×</button></div><form id="incidentForm"><div class="form-grid"><label>Type<select name="type"><option>Animal injury</option><option>Worker injury</option><option>Dog bite / cat bite or scratch</option><option>Fight or unsafe interaction</option><option>Escape / gate breach</option><option>Medication or feeding error</option><option>Transport incident</option><option>Near miss</option><option>Other</option></select></label><label>Severity<select name="severity"><option value="amber">Amber — monitor</option><option value="amber">Amber — action required</option><option value="red">Red — urgent / external assessment</option></select></label><label>Animal<select name="animalId"><option value="">Facility / no animal</option></select></label><label>Responsible manager<select name="managerId" data-staff-options></select></label></div><label>What happened<textarea name="detail" required placeholder="Facts only: time, location, people, animals and immediate action"></textarea></label><label>Immediate controls and follow-up<textarea name="controls" required></textarea></label><div class="form-grid"><label class="checkline"><input type="checkbox"> Photograph/evidence preserved where appropriate</label><label class="checkline"><input type="checkbox"> Owner/vet/insurer/WHS notification decision escalated to manager</label></div><button class="btn red" type="submit">Log incident and alert manager</button></form></div></div>
-<script src="./store.js"></script><script src="./shared.js"></script><script src="./app.js"></script><script src="./safety-command.js"></script><script src="./kennel-intelligence.js"></script><script src="./kennel-command-upgrade.js"></script><script src="./kennel-relocation.js"></script><script src="./kennel-relocation-ui.js"></script><script src="./kennel-weather.js"></script><script src="./kennel-weather-ui.js"></script>
+<script src="./store.js"></script><script src="./shared.js"></script><script src="./app.js"></script><script src="./safety-command.js"></script><script src="./kennel-intelligence.js"></script><script src="./kennel-command-upgrade.js"></script><script src="./kennel-relocation.js"></script><script src="./kennel-relocation-ui.js"></script><script src="./kennel-weather.js"></script><script src="./kennel-weather-ui.js"></script><script src="./kennel-continuity.js"></script><script src="./kennel-continuity-ui.js"></script>
 <script src="./register-sw.js"></script></body></html>
