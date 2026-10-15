@@ -90,7 +90,8 @@ async function route(db,request,url,auth){
     const animal=(await db.query('SELECT id,species,name,breed,vaccination_status,diet,medication_plan,behaviour_notes FROM animals WHERE id=$1 AND facility_id=$2 AND active=true',[auth.animal_id,f])).rows[0];
     if(!animal)throw Object.assign(new Error('animal not found'),{status:404});
     const updates=(await db.query('SELECT id,message,created_at FROM owner_updates WHERE facility_id=$1 AND animal_id=$2 ORDER BY created_at DESC LIMIT 100',[f,auth.animal_id])).rows;
-    return reply({animal,updates});
+    const pickup_requests=(await db.query('SELECT id,collector,note,status,created_at,reviewed_at FROM pickup_authority_requests WHERE facility_id=$1 AND animal_id=$2 ORDER BY created_at DESC LIMIT 50',[f,auth.animal_id])).rows;
+    return reply({animal,updates,pickup_requests});
   }
   if(url.pathname==='/api/owner/pickup-authority-requests'&&method==='POST'){
     if(auth.role!=='owner'||!auth.animal_id)throw Object.assign(new Error('forbidden'),{status:403});
