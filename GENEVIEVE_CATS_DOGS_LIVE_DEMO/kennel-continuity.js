@@ -97,6 +97,21 @@
         reason:state==='HOLD'?'Owner callback information incomplete':state==='AMBER'?'Owner update/follow-up overdue':'Owner follow-up waiting within agreed time'};
     });
   }
+  function closeFollowup(record,input,now){
+    const asOf=Date.parse(now);
+    if(!record?.id||record.state!=='OPEN'||!Number.isFinite(asOf))
+      return {valid:false,reason:'Unknown or already completed follow-up.'};
+    const note=String(input?.outcomeNote||'').trim();
+    if(!note||note.length>300)return {valid:false,reason:'A factual response or attempted-contact outcome is required.'};
+    if(input?.completedBy!==record.assignedTo)return {valid:false,reason:'The assigned staff member must record their own outcome.'};
+    if(!input?.managerReviewedBy||input.managerReviewedBy===input.completedBy)
+      return {valid:false,reason:'A separate manager must review the follow-up evidence.'};
+    if(input?.contactActuallyCompleted!==true)
+      return {valid:false,reason:'An attempted contact does not count as a completed owner response.'};
+    return {valid:true,reason:'Fictional response-and-review evidence is complete.',
+      closure:{state:'CLOSED',closedAt:new Date(asOf).toISOString(),completedBy:input.completedBy,
+        managerReviewedBy:input.managerReviewedBy,outcomeNote:note}};
+  }
   function overview(st,now){
     const c=st?.opsHub?.careContinuity||{};
     const plans=assessPlans(st?.animals,c.planReviews,now);
@@ -107,5 +122,5 @@
       holds:plans.filter(x=>x.state==='HOLD').length+training.filter(x=>x.state==='HOLD').length+followups.filter(x=>x.state==='HOLD').length,
       attention:plans.filter(x=>x.state==='AMBER').length+followups.filter(x=>x.state==='AMBER').length+proposed.length};
   }
-  return {VERSION,REQUIRED_TRAINING,TRAINING_LABELS,validDate,assessReadiness,assessPlans,authorisedCollectors,collectionPreflight,handoverCoverage,callbacks,overview};
+  return {VERSION,REQUIRED_TRAINING,TRAINING_LABELS,validDate,assessReadiness,assessPlans,authorisedCollectors,collectionPreflight,handoverCoverage,callbacks,closeFollowup,overview};
 });
