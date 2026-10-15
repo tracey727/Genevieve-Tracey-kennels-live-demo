@@ -18,7 +18,8 @@
 
     const getToken=()=>storage&&storage.getItem?storage.getItem(TOKEN_KEY):null;
     const hasToken=()=>Boolean(getToken());
-    const disconnect=()=>{if(storage&&storage.removeItem)storage.removeItem(TOKEN_KEY)};
+    const announce=(connected)=>{if(typeof window!=='undefined'&&window.dispatchEvent&&typeof CustomEvent!=='undefined')window.dispatchEvent(new CustomEvent('genevieve:kennels-api-session',{detail:{connected}}))};
+    const disconnect=()=>{if(storage&&storage.removeItem)storage.removeItem(TOKEN_KEY);announce(false)};
 
     async function request(path,{method='GET',body,tokenOverride}={}){
       const token=tokenOverride||getToken();
@@ -42,6 +43,7 @@
       try{
         const session=await request('/api/session',{tokenOverride:value});
         if(storage&&storage.setItem)storage.setItem(TOKEN_KEY,value);
+        announce(true);
         return session;
       }catch(e){
         disconnect();
