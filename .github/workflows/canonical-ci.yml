@@ -31,6 +31,9 @@ jobs:
       - name: Authenticated browser API client regression
         run: node --test tests/kennel-api.test.cjs
 
+      - name: Authenticated UI wiring regression
+        run: node --test tests/kennel-ui-wiring.test.cjs
+
       - name: Cross-program intelligence regression
         run: node --test tests/kennel-intelligence.test.cjs
 
