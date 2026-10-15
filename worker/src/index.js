@@ -43,6 +43,11 @@ async function authenticate(db,request){
   const a=r.rows[0];if(!ROLES.has(a.role))throw Object.assign(new Error('invalid role'),{status:403});return a
 }
 function need(auth,set){if(!set.has(auth.role))throw Object.assign(new Error('forbidden'),{status:403})}
+async function requireAnimalInFacility(db,auth,animalId){
+  if(!isUuid(animalId))throw Object.assign(new Error('valid animal_id required'),{status:400});
+  const r=await db.query('SELECT 1 FROM animals WHERE id=$1 AND facility_id=$2 AND active=true',[animalId,auth.facility_id]);
+  if(!r.rowCount)throw Object.assign(new Error('animal not found'),{status:404});
+}
 async function audit(db,auth,eventType,entityType=null,entityId=null,detail={}){
   await db.query(`INSERT INTO audit_events(facility_id,actor_token_id,actor_subject,actor_role,event_type,entity_type,entity_id,detail)
                   VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`,
@@ -84,6 +89,7 @@ async function route(db,request,url,auth){
     if(auth.role!=='owner'||!auth.animal_id)throw Object.assign(new Error('forbidden'),{status:403});
     const b=await bodyJson(request),id=crypto.randomUUID();
     if(!String(b.collector||'').trim())throw Object.assign(new Error('collector is required'),{status:400});
+    await requireAnimalInFacility(db,auth,auth.animal_id);
     const r=await db.query(`INSERT INTO pickup_authority_requests(id,facility_id,animal_id,collector,note)
       VALUES($1,$2,$3,$4,$5) RETURNING *`,[id,f,auth.animal_id,String(b.collector).trim(),b.note||null]);
     await audit(db,auth,'pickup_authority.requested','pickup_authority_request',id,{animal_id:auth.animal_id});
@@ -99,6 +105,7 @@ async function route(db,request,url,auth){
   if(url.pathname==='/api/bookings'&&method==='POST'){
     need(auth,MANAGER_RECEPTION);const b=await bodyJson(request),id=crypto.randomUUID();
     if(!isUuid(b.animal_id)||!['drop_off','pick_up'].includes(b.booking_type)||!b.due_at)throw Object.assign(new Error('animal_id, booking_type and due_at are required'),{status:400});
+    await requireAnimalInFacility(db,auth,b.animal_id);
     const r=await db.query(`INSERT INTO bookings(id,facility_id,animal_id,booking_type,due_at,status,created_by)
       VALUES($1,$2,$3,$4,$5,'due',$6) RETURNING *`,[id,f,b.animal_id,b.booking_type,b.due_at,auth.subject]);
     await audit(db,auth,'booking.created','booking',id,{animal_id:b.animal_id,booking_type:b.booking_type});return reply(r.rows[0],201);
@@ -117,6 +124,7 @@ async function route(db,request,url,auth){
   if(url.pathname==='/api/custody'&&method==='POST'){
     need(auth,WRITE_OPERATIONS);const b=await bodyJson(request),id=crypto.randomUUID();
     if(!isUuid(b.animal_id)||!['drop_off','pick_up'].includes(b.direction)||!String(b.condition_note||'').trim())throw Object.assign(new Error('animal_id, direction and condition_note are required'),{status:400});
+    await requireAnimalInFacility(db,auth,b.animal_id);
     const r=await db.query(`INSERT INTO custody_records(id,facility_id,animal_id,direction,staff_subject,identity_status,authority_detail,vaccination_status,medication_detail,belongings,condition_note)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [id,f,b.animal_id,b.direction,auth.subject,b.identity_status||null,b.authority_detail||null,b.vaccination_status||null,b.medication_detail||null,b.belongings||null,b.condition_note]);
@@ -201,6 +209,7 @@ async function route(db,request,url,auth){
   if(url.pathname==='/api/owner-updates'&&method==='POST'){
     need(auth,MANAGER_RECEPTION);const b=await bodyJson(request),id=crypto.randomUUID();
     if(!isUuid(b.animal_id)||!String(b.message||'').trim())throw Object.assign(new Error('animal_id and message are required'),{status:400});
+    await requireAnimalInFacility(db,auth,b.animal_id);
     const r=await db.query('INSERT INTO owner_updates(id,facility_id,animal_id,message,approved_by) VALUES($1,$2,$3,$4,$5) RETURNING *',[id,f,b.animal_id,b.message,auth.subject]);
     await audit(db,auth,'owner_update.created','owner_update',id,{animal_id:b.animal_id});return reply(r.rows[0],201);
   }
@@ -240,6 +249,7 @@ async function route(db,request,url,auth){
   if(url.pathname==='/api/tasks'&&method==='GET')return reply((await db.query('SELECT * FROM care_tasks WHERE facility_id=$1 ORDER BY due_at NULLS LAST,created_at DESC',[f])).rows);
   if(url.pathname==='/api/tasks'&&method==='POST'){
     need(auth,WRITE_CARE);const b=await bodyJson(request),id=crypto.randomUUID();
+    if(b.animal_id!=null)await requireAnimalInFacility(db,auth,b.animal_id);
     const r=await db.query(`INSERT INTO care_tasks(id,facility_id,animal_id,type,detail,due_at,status,severity,assigned_subject)
       VALUES($1,$2,$3,$4,$5,$6,'open',$7,$8) RETURNING *`,
       [id,f,b.animal_id||null,b.type,b.detail||'',b.due_at||null,b.severity||'green',b.assigned_subject||null]);
@@ -257,7 +267,8 @@ async function route(db,request,url,auth){
   if(url.pathname==='/api/incidents'&&method==='GET')return reply((await db.query('SELECT * FROM incidents WHERE facility_id=$1 ORDER BY occurred_at DESC',[f])).rows);
   if(url.pathname==='/api/incidents'&&method==='POST'){
     need(auth,WRITE_INCIDENTS);const b=await bodyJson(request),id=crypto.randomUUID();
-    if(!['amber','amber','red'].includes(b.severity))throw Object.assign(new Error('invalid severity'),{status:400});
+    if(!['amber','red','hold'].includes(b.severity))throw Object.assign(new Error('invalid severity'),{status:400});
+    if(b.animal_id!=null)await requireAnimalInFacility(db,auth,b.animal_id);
     const r=await db.query(`INSERT INTO incidents(id,facility_id,animal_id,type,severity,detail,controls,status,reported_by)
       VALUES($1,$2,$3,$4,$5,$6,$7,'open',$8) RETURNING *`,
       [id,f,b.animal_id||null,b.type,b.severity,b.detail||'',b.controls||'',auth.subject]);
@@ -276,6 +287,7 @@ async function route(db,request,url,auth){
   if(url.pathname==='/api/safety/physio'&&method==='GET')return reply((await db.query('SELECT * FROM physio_records WHERE facility_id=$1 ORDER BY observed_at DESC LIMIT 200',[f])).rows);
   if(url.pathname==='/api/safety/physio'&&method==='POST'){
     need(auth,WRITE_SAFETY);const b=await bodyJson(request),id=crypto.randomUUID();
+    await requireAnimalInFacility(db,auth,b.animal_id);
     const r=await db.query(`INSERT INTO physio_records(id,facility_id,animal_id,mobility_observation,comfort_observation,action,note,observed_by)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,[id,f,b.animal_id,b.mobility_observation,b.comfort_observation,b.action,b.note,auth.subject]);
     await audit(db,auth,'physio.observation','physio_record',id,{animal_id:b.animal_id,action:b.action});return reply(r.rows[0],201)
@@ -300,12 +312,14 @@ async function route(db,request,url,auth){
   if(url.pathname==='/api/workforce-events'&&method==='POST'){
     need(auth,new Set(['manager','attendant']));const b=await bodyJson(request),id=crypto.randomUUID();
     if(!['break','close_shift','overtime','lone_worker_check'].includes(b.event_type))throw Object.assign(new Error('invalid event_type'),{status:400});
-    const r=await db.query('INSERT INTO workforce_events(id,facility_id,subject,event_type,minutes,detail) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[id,f,b.subject||auth.subject,b.event_type,b.minutes??null,b.detail||null]);
-    await audit(db,auth,'workforce.event','workforce_event',id,{event_type:b.event_type,subject:b.subject||auth.subject});return reply(r.rows[0],201);
+    if(b.subject&&b.subject!==auth.subject&&auth.role!=='manager')throw Object.assign(new Error('cannot record another staff member\'s event'),{status:403});
+    const subject=auth.role==='manager'&&String(b.subject||'').trim()?String(b.subject).trim():auth.subject;
+    const r=await db.query('INSERT INTO workforce_events(id,facility_id,subject,event_type,minutes,detail) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[id,f,subject,b.event_type,b.minutes??null,b.detail||null]);
+    await audit(db,auth,'workforce.event','workforce_event',id,{event_type:b.event_type,subject});return reply(r.rows[0],201);
   }
   if(url.pathname==='/api/compliance'&&method==='GET')return reply((await db.query('SELECT * FROM compliance_evidence WHERE facility_id=$1 ORDER BY item',[f])).rows);
   if(url.pathname==='/api/compliance'&&method==='POST'){
-    need(auth,new Set(['manager','auditor']));const b=await bodyJson(request),id=crypto.randomUUID();
+    need(auth,new Set(['manager']));const b=await bodyJson(request),id=crypto.randomUUID();
     if(!String(b.item||'').trim()||!['current','not_current','hold'].includes(b.status))throw Object.assign(new Error('item and valid status are required'),{status:400});
     const r=await db.query(`INSERT INTO compliance_evidence(id,facility_id,item,status,evidence_ref,reviewed_by,reviewed_at)
       VALUES($1,$2,$3,$4,$5,$6,now())
@@ -323,13 +337,35 @@ export default {
     const url=new URL(request.url), method=request.method.toUpperCase();
     try{
       if(url.pathname==='/api/health'&&method==='GET'){
-        return withDb(env,async db=>{const r=await db.query('SELECT current_database() database,current_user role,now() server_time');return reply({ok:true,service:'genevieve-kennels-command-centre',...r.rows[0]})})
+        return await withDb(env,async db=>{
+          const r=await db.query("SELECT current_database() AS database,current_user AS role,now() AS server_time,to_regclass('public.facilities') IS NOT NULL AS facilities_ready,to_regclass('public.access_tokens') IS NOT NULL AS tokens_ready,to_regclass('public.animals') IS NOT NULL AS animals_ready,to_regclass('public.audit_events') IS NOT NULL AS audit_ready");
+          const state=r.rows[0];
+          const schemaReady=state.facilities_ready&&state.tokens_ready&&state.animals_ready&&state.audit_ready;
+          const ready=schemaReady&&state.database==='kennels_prod'&&state.role==='kennel_runtime';
+          return reply({ok:ready,service:'genevieve-kennels-command-centre',database:state.database,role:state.role,server_time:state.server_time,schema_ready:schemaReady},ready?200:503);
+        })
       }
       if(!url.pathname.startsWith('/api/')){
         if(env.ASSETS)return env.ASSETS.fetch(request);
         return new Response('Not found',{status:404})
       }
-      return withDb(env,async db=>route(db,request,url,await authenticate(db,request)));
+      return await withDb(env,async db=>{
+        // Read requests remain read-only. Every authenticated mutation and its
+        // audit record commit together, or neither is persisted.
+        const isMutation=!['GET','HEAD','OPTIONS'].includes(method);
+        if(!isMutation)return route(db,request,url,await authenticate(db,request));
+        await db.query('BEGIN');
+        try{
+          const auth=await authenticate(db,request);
+          const response=await route(db,request,url,auth);
+          if(response.status>=400){await db.query('ROLLBACK');return response}
+          await db.query('COMMIT');
+          return response;
+        }catch(error){
+          try{await db.query('ROLLBACK')}catch(rollbackError){console.error('Kennels transaction rollback failed',rollbackError)}
+          throw error;
+        }
+      });
     }catch(e){
       console.error(e);const status=e.status||500;
       const message=status>=500?'server error':e.message;
