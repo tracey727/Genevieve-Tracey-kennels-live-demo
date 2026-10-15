@@ -173,3 +173,17 @@ test('compliance methods use authenticated API routes',async()=>{
   assert.equal((await api.saveCompliance({item:'Synthetic',status:'current'})).id,'c1');
   assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
 });
+
+
+test('dashboard and alert methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/dashboard')return response(200,{animals:1,openTasks:2,openIncidents:0,kennels:3,expiredStock:0});
+    if(path==='/api/alerts')return response(200,[]);
+    return response(404,{error:'not found'});
+  }});
+  assert.equal((await api.dashboard()).animals,1);
+  assert.deepEqual(await api.alerts(),[]);
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
+});
