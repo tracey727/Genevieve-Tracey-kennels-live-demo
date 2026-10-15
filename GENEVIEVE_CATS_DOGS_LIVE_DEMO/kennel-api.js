@@ -64,6 +64,9 @@
       tasks:()=>request('/api/tasks'),
       createTask:(body)=>request('/api/tasks',{method:'POST',body}),
       updateTask:(id,body)=>request('/api/tasks/'+encodeURIComponent(id),{method:'PATCH',body}),
+      stock:()=>request('/api/stock'),
+      createStock:(body)=>request('/api/stock',{method:'POST',body}),
+      updateStock:(id,body)=>request('/api/stock/'+encodeURIComponent(id),{method:'PATCH',body}),
       request
     };
   }
