@@ -55,8 +55,12 @@
       connect,
       session:()=>request('/api/session'),
       staff:()=>request('/api/staff'),
+      animals:()=>request('/api/animals'),
+      createAnimal:(body)=>request('/api/animals',{method:'POST',body}),
       request
     };
   }
-  return {TOKEN_KEY,create};
+  let shared=null;
+  function sharedClient(){return shared||(shared=create())}
+  return {TOKEN_KEY,create,sharedClient};
 });
