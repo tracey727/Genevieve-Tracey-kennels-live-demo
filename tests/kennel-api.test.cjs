@@ -143,3 +143,19 @@ test('rounds and transport methods use authenticated API routes',async()=>{
   assert.equal((await api.updateTransport('x1',{status:'completed'})).status,'completed');
   assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
 });
+
+
+test('incident and audit methods use authenticated API routes',async()=>{
+  const seen=[],s=storage();s.setItem(TOKEN_KEY,'synthetic');
+  const api=create({storage:s,fetchImpl:async(path,opts)=>{
+    seen.push({path,opts});
+    if(path==='/api/incidents'&&opts.method==='GET')return response(200,[]);
+    if(path==='/api/incidents'&&opts.method==='POST')return response(201,{id:'i1',severity:'amber'});
+    if(path==='/api/audit'&&opts.method==='GET')return response(200,[]);
+    return response(404,{error:'not found'});
+  }});
+  assert.deepEqual(await api.incidents(),[]);
+  assert.equal((await api.createIncident({type:'Near miss',severity:'amber'})).id,'i1');
+  assert.deepEqual(await api.audit(),[]);
+  assert.ok(seen.every(x=>x.opts.headers.authorization==='Bearer synthetic'));
+});
