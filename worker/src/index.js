@@ -142,11 +142,27 @@ async function route(db,request,url,auth){
       );
       if(!approved.rowCount)throw Object.assign(new Error('approved pickup authority required'),{status:403});
     }
+    const latest=await db.query(
+      "SELECT direction FROM custody_records WHERE facility_id=$1 AND animal_id=$2 ORDER BY occurred_at DESC,id DESC LIMIT 1 FOR UPDATE",
+      [f,b.animal_id]
+    );
+    if(b.direction==='pick_up'&&(!latest.rowCount||latest.rows[0].direction!=='drop_off'))
+      throw Object.assign(new Error('animal is not currently checked in; pickup denied'),{status:409});
+    if(b.direction==='drop_off'&&latest.rowCount&&latest.rows[0].direction==='drop_off')
+      throw Object.assign(new Error('animal already checked in; duplicate drop-off denied'),{status:409});
+    const dueBooking=await db.query(
+      "SELECT id FROM bookings WHERE facility_id=$1 AND animal_id=$2 AND booking_type=$3 AND status='due' ORDER BY due_at,id LIMIT 1 FOR UPDATE",
+      [f,b.animal_id,b.direction]
+    );
+    if(!dueBooking.rowCount)throw Object.assign(new Error('matching due booking required before custody handover'),{status:409});
     const r=await db.query(`INSERT INTO custody_records(id,facility_id,animal_id,direction,staff_subject,identity_status,authority_detail,vaccination_status,medication_detail,belongings,condition_note)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [id,f,b.animal_id,b.direction,auth.subject,b.identity_status||null,b.authority_detail||null,b.vaccination_status||null,b.medication_detail||null,b.belongings||null,b.condition_note]);
+    await db.query("UPDATE bookings SET status='completed',updated_at=now() WHERE id=$1 AND facility_id=$2",[dueBooking.rows[0].id,f]);
     await db.query('UPDATE animals SET updated_at=now() WHERE id=$1 AND facility_id=$2',[b.animal_id,f]);
-    await audit(db,auth,'custody.'+b.direction,'custody_record',id,{animal_id:b.animal_id});return reply(r.rows[0],201);
+    await audit(db,auth,'custody.'+b.direction,'custody_record',id,{animal_id:b.animal_id,booking_id:dueBooking.rows[0].id});
+    await audit(db,auth,'booking.status','booking',dueBooking.rows[0].id,{status:'completed',custody_id:id});
+    return reply(r.rows[0],201);
   }
 
   if(url.pathname==='/api/rounds'&&method==='GET'){
