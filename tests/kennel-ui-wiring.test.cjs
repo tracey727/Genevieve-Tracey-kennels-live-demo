@@ -71,3 +71,13 @@ test('employee app loads authenticated adapter after secure API client',()=>{
   assert.ok(employee.indexOf('./employee-api-ui.js')>employee.indexOf('./kennel-api.js'));
   assert.ok(sw.includes('./employee-api-ui.js'));
 });
+
+
+test('driver app loads authenticated adapter after secure API client',()=>{
+  const transport=fs.readFileSync(base+'/transport.html','utf8');
+  assert.ok(fs.existsSync(base+'/transport-api-ui.js'));
+  assert.ok(transport.includes('./kennel-api.js'));
+  assert.ok(transport.includes('./transport-api-ui.js'));
+  assert.ok(transport.indexOf('./transport-api-ui.js')>transport.indexOf('./kennel-api.js'));
+  assert.ok(sw.includes('./transport-api-ui.js'));
+});
