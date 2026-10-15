@@ -37,6 +37,12 @@ try{
     ON CONFLICT(id) DO UPDATE SET facility_id=excluded.facility_id,name=excluded.name,active=true
   `,[ANIMAL_B,FAC_B]);
 
+  await db.query(`
+    INSERT INTO staff_members(id,facility_id,subject,name,role,on_shift,first_aid,animal_first_aid,active)
+    VALUES('22222222-2222-4222-8222-222222222223',$1,'manager.b','Manager B','manager',true,true,true,true)
+    ON CONFLICT(facility_id,subject) DO UPDATE SET active=true
+  `,[FAC_B]);
+
   const identities=[
     ['aa111111-1111-4111-8111-111111111111',FAC_A,'manager.a','Manager A','manager',token('manager-a')],
     ['aa111111-1111-4111-8111-111111111112',FAC_A,'attendant.a','Attendant A','attendant',token('attendant-a')],
@@ -85,6 +91,12 @@ try{
     body:{event_type:'break',minutes:10,subject:'manager.a',detail:'must be denied'}
   }));
   assert.equal(r.status,403,'attendant must not record another staff identity');
+
+  r=await json(await request('/api/tasks',{
+    method:'POST',bearer:token('manager-a'),
+    body:{type:'Synthetic care task',detail:'assignment isolation',assigned_subject:'manager.b',severity:'green'}
+  }));
+  assert.equal(r.status,404,'care task must not be assigned to staff from another facility');
 
   r=await json(await request('/api/compliance',{
     method:'POST',bearer:token('auditor-a'),
