@@ -31,6 +31,9 @@ jobs:
       - name: Cross-program intelligence regression
         run: node --test tests/kennel-intelligence.test.cjs
 
+      - name: Pet relocation and travel budget regression
+        run: node --test tests/kennel-relocation.test.cjs
+
       - name: Canonical integrity validation
         run: python3 scripts/validate_build.py
 
