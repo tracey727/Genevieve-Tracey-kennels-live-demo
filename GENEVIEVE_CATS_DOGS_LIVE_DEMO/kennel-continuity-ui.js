@@ -28,6 +28,8 @@
     assign('continuityAnimal',animals);assign('continuityCollectorAnimal',animals);
     assign('continuityStaff',staffs);assign('continuityManager',mgr);assign('continuityCallbackStaff',staffs);
     assign('continuityCallbackAnimal',animals);assign('continuityCoverStaff',staffs);assign('continuityCoverManager',mgr);
+    assign('continuityCallbackDoneBy',staffs);assign('continuityCallbackManager',mgr);
+    assign('continuityCallbackClose',c.followups.filter(x=>x.state==='OPEN').map(x=>({id:x.id,name:x.message+' · '+x.id})));
     assign('continuityTrainingManager',mgr);
     assign('continuityCareTask',(st.tasks||[]).filter(x=>!['Completed','Cancelled'].includes(x.status)).map(t=>{
       const a=animals.find(x=>x.id===t.animalId);
@@ -90,6 +92,15 @@
         !Number.isFinite(Date.parse(dueAt)))return G.toast('Select a valid animal, staff owner, due time and follow-up reason.');
       change(x=>x.followups.push({id:id('CALL'),animalId,assignedTo,message,dueAt:new Date(dueAt).toISOString(),state:'OPEN'}),
         'Owner callback placed in named follow-up queue');
+    }else if(form.id==='continuityFormCallbackClose'){
+      const callbackId=String(d.get('callbackId')||''),record=c.followups.find(x=>x.id===callbackId);
+      const completedBy=String(d.get('completedBy')||''),reviewer=String(d.get('managerId')||'');
+      if(!st.staff.some(x=>x.id===completedBy)||!st.staff.some(x=>x.id===reviewer&&/manager|senior attendant/i.test(x.role)))return G.toast('Choose a fictional staff member and separate manager reviewer.');
+      const result=E.closeFollowup(record,{completedBy,managerReviewedBy:reviewer,
+        outcomeNote:String(d.get('outcomeNote')||''),contactActuallyCompleted:d.has('completed')},now());
+      if(!result.valid)return G.toast(result.reason);
+      change(x=>Object.assign(x.followups.find(y=>y.id===callbackId),result.closure),
+        'Fictional owner follow-up completed with response evidence');
     }else if(form.id==='continuityFormCover'){
       const task=st.tasks.find(x=>x.id===d.get('taskId')),receiverId=String(d.get('receiverId')||'');
       if(!task?.assignedTo||receiverId===task.assignedTo||!st.staff.some(x=>x.id===receiverId&&x.onShift)||
