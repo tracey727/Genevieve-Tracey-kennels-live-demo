@@ -141,6 +141,24 @@ try{
     body:{type:'Synthetic care task',detail:'assignment isolation',assigned_subject:'manager.b',severity:'green'}
   }));
   assert.equal(r.status,404,'care task must not be assigned to staff from another facility');
+  const deniedCrossFacilityAudit=await db.query(
+    "SELECT count(*)::int AS n FROM care_tasks WHERE facility_id=$1 AND assigned_subject='manager.b'",
+    [FAC_A]
+  );
+  assert.equal(deniedCrossFacilityAudit.rows[0].n,0,'denied cross-facility assignment must not persist');
+
+  r=await json(await request('/api/tasks',{
+    method:'POST',bearer:token('manager-a'),
+    body:{type:'Synthetic same-facility care task',detail:'valid assignment',assigned_subject:'attendant.a',severity:'green'}
+  }));
+  assert.equal(r.status,201,'manager must be able to assign an active staff member in their own facility');
+  assert.equal(r.body.assigned_subject,'attendant.a');
+  assert.equal(r.body.facility_id,FAC_A);
+  const taskAudit=await db.query(
+    "SELECT count(*)::int AS n FROM audit_events WHERE facility_id=$1 AND entity_id=$2 AND event_type='task.created'",
+    [FAC_A,r.body.id]
+  );
+  assert.equal(taskAudit.rows[0].n,1,'successful care assignment must have an audit event');
 
   r=await json(await request('/api/compliance',{
     method:'POST',bearer:token('auditor-a'),
